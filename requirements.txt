@@ -6,3 +6,4 @@ matplotlib
 python-dotenv
 gtts
 pillow
+gunicorn
