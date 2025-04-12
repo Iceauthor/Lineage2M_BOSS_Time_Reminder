@@ -1,0 +1,8 @@
+flask
+line-bot-sdk
+apscheduler
+mysql-connector-python
+matplotlib
+python-dotenv
+gtts
+pillow
