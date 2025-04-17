@@ -1,3 +1,4 @@
+
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
@@ -7,15 +8,91 @@ from db import get_boss_info_by_keyword, insert_kill_time
 from datetime import datetime, timedelta
 import pytz
 import psycopg2
+import json
 
 load_dotenv()
 tz = pytz.timezone("Asia/Taipei")
 
-required_vars = ["LINE_CHANNEL_ACCESS_TOKEN", "LINE_CHANNEL_SECRET"]
-for var in required_vars:
-    if not os.getenv(var):
-        raise EnvironmentError(f"❌ 缺少必要環境變數：{var}")
+def get_db_connection():
+    return psycopg2.connect(
+        host=os.getenv("DB_HOST"),
+        port=int(os.getenv("DB_PORT")),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        dbname=os.getenv("DB_NAME")
+    )
 
+# 自動清理重複 boss_aliases 並建立唯一索引
+def cleanup_boss_aliases():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            DELETE FROM boss_aliases a
+            USING boss_aliases b
+            WHERE
+                a.ctid < b.ctid
+                AND a.boss_id = b.boss_id
+                AND a.keyword = b.keyword;
+        """)
+        print("✅ 已清除重複 boss_aliases")
+
+        cursor.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_boss_keyword_unique
+            ON boss_aliases (boss_id, keyword);
+        """)
+        print("✅ 已建立唯一索引")
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print("❌ 清理/索引建立失敗：", e)
+
+# 自動匯入 boss_list.json 資料
+def auto_insert_boss_list():
+    print("🚀 執行 BOSS 自動匯入")
+    try:
+        with open("boss_list.json", "r", encoding="utf-8") as f:
+            bosses = json.load(f)
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        for boss in bosses:
+            display_name = boss["display_name"]
+            respawn_hours = boss["respawn_hours"]
+            keywords = boss["keywords"]
+
+            cursor.execute("SELECT id FROM boss_list WHERE display_name = %s", (display_name,))
+            row = cursor.fetchone()
+            if row:
+                boss_id = row[0]
+            else:
+                cursor.execute("INSERT INTO boss_list (display_name, respawn_hours) VALUES (%s, %s) RETURNING id",
+                               (display_name, respawn_hours))
+                boss_id = cursor.fetchone()[0]
+
+            for keyword in keywords:
+                cursor.execute("SELECT 1 FROM boss_aliases WHERE boss_id = %s AND keyword = %s",
+                               (boss_id, keyword.lower()))
+                if not cursor.fetchone():
+                    cursor.execute("INSERT INTO boss_aliases (boss_id, keyword) VALUES (%s, %s)",
+                                   (boss_id, keyword.lower()))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print("✅ BOSS 資料匯入完成")
+    except Exception as e:
+        print("❌ 匯入錯誤：", e)
+
+# 啟動時先執行一次清理 + 匯入
+cleanup_boss_aliases()
+auto_insert_boss_list()
+
+# LINE 機器人主體
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 app = Flask(__name__)
@@ -36,15 +113,6 @@ def callback():
         print("❌ Webhook 錯誤：", str(e))
         abort(400)
     return "OK"
-
-def get_db_connection():
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        port=int(os.getenv("DB_PORT")),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        dbname=os.getenv("DB_NAME")
-    )
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
