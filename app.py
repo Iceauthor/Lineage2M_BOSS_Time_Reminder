@@ -215,12 +215,16 @@ def handle_message(event):
             else:
                 lines.append(f"{name}：____-__-__ __:__:__")
 
-        reply_text = "".join(lines)
-
-        try:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-        except Exception as e:
-            print("❌ 回覆失敗：", e)
+        # 為了避免 LINE 自動摺疊，分段每 20 筆一段送出
+        chunk_size = 20
+        for i in range(0, len(lines), chunk_size):
+            chunk = lines[i:i+chunk_size]
+            reply_text = "".join(chunk)
+            try:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+                event.reply_token = None  # 避免多次回覆用同一個 token 出錯
+            except Exception as e:
+                print("❌ 回覆失敗：", e)
 
 
 # 自動推播：重生時間倒數兩分鐘提醒
