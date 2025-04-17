@@ -1,0 +1,393 @@
+[
+  {
+    "display_name": "被汙染的克魯瑪",
+    "respawn_hours": 8,
+    "keywords": [
+      "克4",
+      "K4",
+      "k4"
+    ]
+  },
+  {
+    "display_name": "司穆艾爾",
+    "respawn_hours": 12,
+    "keywords": [
+      "司穆",
+      "象3",
+      "3"
+    ]
+  },
+  {
+    "display_name": "塔金",
+    "respawn_hours": 6,
+    "keywords": [
+      "塔金"
+    ]
+  },
+  {
+    "display_name": "提米特利斯",
+    "respawn_hours": 8,
+    "keywords": [
+      "提米"
+    ]
+  },
+  {
+    "display_name": "突變克魯瑪",
+    "respawn_hours": 8,
+    "keywords": [
+      "突克",
+      "突變"
+    ]
+  },
+  {
+    "display_name": "希瑟雷蒙",
+    "respawn_hours": 8,
+    "keywords": [
+      "希瑟"
+    ]
+  },
+  {
+    "display_name": "潘納洛德",
+    "respawn_hours": 8,
+    "keywords": [
+      "潘納"
+    ]
+  },
+  {
+    "display_name": "黑色蕾爾莉",
+    "respawn_hours": 8,
+    "keywords": [
+      "黑蕾"
+    ]
+  },
+  {
+    "display_name": "拉何",
+    "respawn_hours": 8,
+    "keywords": [
+      "拉何"
+    ]
+  },
+  {
+    "display_name": "寇倫",
+    "respawn_hours": 8,
+    "keywords": [
+      "寇倫"
+    ]
+  },
+  {
+    "display_name": "提米妮爾",
+    "respawn_hours": 8,
+    "keywords": [
+      "提妮"
+    ]
+  },
+  {
+    "display_name": "卡坦",
+    "respawn_hours": 8,
+    "keywords": [
+      "卡坦"
+    ]
+  },
+  {
+    "display_name": "巴實那",
+    "respawn_hours": 8,
+    "keywords": [
+      "巴實"
+    ]
+  },
+  {
+    "display_name": "蘭多勒",
+    "respawn_hours": 8,
+    "keywords": [
+      "蘭多"
+    ]
+  },
+  {
+    "display_name": "卡雷斯",
+    "respawn_hours": 8,
+    "keywords": [
+      "卡雷"
+    ]
+  },
+  {
+    "display_name": "佩爾利斯",
+    "respawn_hours": 8,
+    "keywords": [
+      "佩爾"
+    ]
+  },
+  {
+    "display_name": "貝希莫斯",
+    "respawn_hours": 8,
+    "keywords": [
+      "貝希"
+    ]
+  },
+  {
+    "display_name": "賽魯",
+    "respawn_hours": 8,
+    "keywords": [
+      "賽魯"
+    ]
+  },
+  {
+    "display_name": "坦佛斯特",
+    "respawn_hours": 8,
+    "keywords": [
+      "坦佛"
+    ]
+  },
+  {
+    "display_name": "布賴卡",
+    "respawn_hours": 8,
+    "keywords": [
+      "布賴"
+    ]
+  },
+  {
+    "display_name": "特論巴",
+    "respawn_hours": 8,
+    "keywords": [
+      "特論"
+    ]
+  },
+  {
+    "display_name": "魔圖拉",
+    "respawn_hours": 8,
+    "keywords": [
+      "魔圖"
+    ]
+  },
+  {
+    "display_name": "弗林特",
+    "respawn_hours": 8,
+    "keywords": [
+      "弗林"
+    ]
+  },
+  {
+    "display_name": "潘柴特",
+    "respawn_hours": 8,
+    "keywords": [
+      "潘柴"
+    ]
+  },
+  {
+    "display_name": "瓦柏",
+    "respawn_hours": 8,
+    "keywords": [
+      "瓦柏"
+    ]
+  },
+  {
+    "display_name": "安庫拉",
+    "respawn_hours": 8,
+    "keywords": [
+      "安庫"
+    ]
+  },
+  {
+    "display_name": "薩班",
+    "respawn_hours": 8,
+    "keywords": [
+      "薩班"
+    ]
+  },
+  {
+    "display_name": "史坦",
+    "respawn_hours": 8,
+    "keywords": [
+      "史坦"
+    ]
+  },
+  {
+    "display_name": "采爾圖巴",
+    "respawn_hours": 8,
+    "keywords": [
+      "采爾"
+    ]
+  },
+  {
+    "display_name": "忘卻之鏡",
+    "respawn_hours": 8,
+    "keywords": [
+      "忘卻"
+    ]
+  },
+  {
+    "display_name": "奧爾芬",
+    "respawn_hours": 8,
+    "keywords": [
+      "奧爾"
+    ]
+  },
+  {
+    "display_name": "大地祭壇",
+    "respawn_hours": 8,
+    "keywords": [
+      "地祭"
+    ]
+  },
+  {
+    "display_name": "水之祭壇",
+    "respawn_hours": 8,
+    "keywords": [
+      "水祭"
+    ]
+  },
+  {
+    "display_name": "風之祭壇",
+    "respawn_hours": 8,
+    "keywords": [
+      "風祭"
+    ]
+  },
+  {
+    "display_name": "黑闇祭壇",
+    "respawn_hours": 8,
+    "keywords": [
+      "黑祭"
+    ]
+  },
+  {
+    "display_name": "猛龍獸",
+    "respawn_hours": 8,
+    "keywords": [
+      "猛龍"
+    ]
+  },
+  {
+    "display_name": "鳳凰",
+    "respawn_hours": 8,
+    "keywords": [
+      "鳳凰"
+    ]
+  },
+  {
+    "display_name": "卡布里歐",
+    "respawn_hours": 8,
+    "keywords": [
+      "卡布"
+    ]
+  },
+  {
+    "display_name": "巨蟻女王",
+    "respawn_hours": 8,
+    "keywords": [
+      "蟻后",
+      "巨蟻"
+    ]
+  },
+  {
+    "display_name": "克拉奇",
+    "respawn_hours": 8,
+    "keywords": [
+      "克拉"
+    ]
+  },
+  {
+    "display_name": "雷比魯",
+    "respawn_hours": 8,
+    "keywords": [
+      "雷比"
+    ]
+  },
+  {
+    "display_name": "核心基座",
+    "respawn_hours": 8,
+    "keywords": [
+      "核心"
+    ]
+  },
+  {
+    "display_name": "納伊阿斯",
+    "respawn_hours": 8,
+    "keywords": [
+      "納伊"
+    ]
+  },
+  {
+    "display_name": "安德拉斯",
+    "respawn_hours": 8,
+    "keywords": [
+      "安德"
+    ]
+  },
+  {
+    "display_name": "霸拉克",
+    "respawn_hours": 8,
+    "keywords": [
+      "霸拉"
+    ]
+  },
+  {
+    "display_name": "哈普",
+    "respawn_hours": 8,
+    "keywords": [
+      "哈普"
+    ]
+  },
+  {
+    "display_name": "薩拉克斯",
+    "respawn_hours": 8,
+    "keywords": [
+      "薩拉"
+    ]
+  },
+  {
+    "display_name": "歐克斯",
+    "respawn_hours": 8,
+    "keywords": [
+      "歐克"
+    ]
+  },
+  {
+    "display_name": "摩德烏斯",
+    "respawn_hours": 8,
+    "keywords": [
+      "摩德"
+    ]
+  },
+  {
+    "display_name": "巴倫",
+    "respawn_hours": 8,
+    "keywords": [
+      "巴倫"
+    ]
+  },
+  {
+    "display_name": "塔那透斯",
+    "respawn_hours": 8,
+    "keywords": [
+      "塔那"
+    ]
+  },
+  {
+    "display_name": "黑卡頓",
+    "respawn_hours": 8,
+    "keywords": [
+      "黑卡"
+    ]
+  },
+  {
+    "display_name": "梅杜莎",
+    "respawn_hours": 8,
+    "keywords": [
+      "梅杜"
+    ]
+  },
+  {
+    "display_name": "沙勒卡",
+    "respawn_hours": 8,
+    "keywords": [
+      "沙勒"
+    ]
+  },
+  {
+    "display_name": "凱索思",
+    "respawn_hours": 8,
+    "keywords": [
+      "凱索"
+    ]
+  }
+]
