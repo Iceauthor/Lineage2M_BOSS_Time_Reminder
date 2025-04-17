@@ -210,46 +210,45 @@ def handle_message(event):
         next_24hr = now + timedelta(hours=24)
 
         cursor.execute("""
-            SELECT b.display_name, t.respawn_time
-            FROM boss_list b
-            LEFT JOIN (
-                SELECT DISTINCT ON (boss_id) boss_id, respawn_time
-                FROM boss_tasks
-                WHERE group_id = %s
-                ORDER BY boss_id, id DESC
-            ) t ON t.boss_id = b.id
-            ORDER BY t.respawn_time NULLS LAST
-        """, (group_id,))
+                    SELECT b.display_name, t.timestamp, b.respawn_hours
+                    FROM boss_list b
+                    LEFT JOIN (
+                        SELECT DISTINCT ON (boss_id) *
+                        FROM boss_tasks
+                        WHERE group_id = %s
+                        ORDER BY boss_id, id DESC
+                    ) t ON t.boss_id = b.id
+                    ORDER BY t.timestamp NULLS LAST
+                """, (group_id,))
         results = cursor.fetchall()
         cursor.close()
         conn.close()
 
         print(f"📊 查詢結果：共 {len(results)} 筆")
-        lines = ["🕓 接下來 24 小時內重生 BOSS："]
+        lines = ["🕓 接下來 24 小時內重生 BOSS：\\n"]
 
-        for name, time in results:
-            if time:
-                time = time.replace(tzinfo=tz)
-                if now <= time <= next_24hr:
-                    lines.append(f"{time.strftime('%H:%M:%S')} {name}")
-                elif now > time:
-                    respawn_hours = get_respawn_hours_by_name(name)
-                    if respawn_hours:
-                        delta = now - time
-                        cycles = int(delta.total_seconds() // (respawn_hours * 3600)) + 1
-                        lines.append(f"{time.strftime('%H:%M:%S')} {name}【過{cycles}】")
-                    else:
-                        lines.append(f"{time.strftime('%H:%M:%S')} {name}")
+        for name, timestamp, respawn_hours in results:
+            if timestamp:
+                death_time = timestamp.replace(tzinfo=tz)
+                respawn_time = death_time + timedelta(hours=respawn_hours)
+
+                if now <= respawn_time <= next_24hr:
+                    lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}\\n")
+                elif now > respawn_time:
+                    delta = now - respawn_time
+                    cycles = int(delta.total_seconds() // (respawn_hours * 3600)) + 1
+                    lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}【過{cycles}】\\n")
                 else:
-                    lines.append(f"{time.strftime('%H:%M:%S')} {name}")
+                    lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}\\n")
             else:
-                lines.append(f"__ : __ : __ {name}")
+                lines.append(f"__ : __ : __ {name}\\n")
 
         reply_text = "".join(lines)
         try:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
         except Exception as e:
             print("❌ 回覆失敗：", e)
+
 
 
 # 自動推播：重生時間倒數兩分鐘提醒
