@@ -1,22 +1,19 @@
 
+import os
+import psycopg2
 from flask import Flask, request, abort
+from dotenv import load_dotenv
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
-import os
-from dotenv import load_dotenv
-import psycopg2
-from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 import pytz
 
 load_dotenv()
-app = Flask(__name__)
 
+app = Flask(__name__)
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
-
-tz = pytz.timezone("Asia/Taipei")
 
 def get_db_connection():
     return psycopg2.connect(
@@ -31,16 +28,15 @@ def get_respawn_hours_by_name(name):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT respawn_hours FROM boss_list WHERE display_name = %s", (name,))
-    row = cursor.fetchone()
+    result = cursor.fetchone()
     cursor.close()
     conn.close()
-    return row[0] if row else None
+    return result[0] if result else None
 
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
-
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
@@ -49,52 +45,49 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    user_msg = event.message.text.strip()
-    group_id = getattr(event.source, 'group_id', 'single')
-
-    if user_msg.lower() in ["kb all", "出"]:
+    text = event.message.text.strip().lower()
+    group_id = event.source.group_id if event.source.type == "group" else "single"
+    if text in ["kb all", "出"]:
         conn = get_db_connection()
         cursor = conn.cursor()
-        now = datetime.now(tz)
-        next_24hr = now + timedelta(hours=24)
-
         cursor.execute("""
-            SELECT b.display_name, t.death_time, b.respawn_hours
+            SELECT b.display_name, t.respawn_time, b.respawn_hours
             FROM boss_list b
             LEFT JOIN (
-                SELECT DISTINCT ON (boss_id) *
+                SELECT DISTINCT ON (boss_id) boss_id, respawn_time
                 FROM boss_tasks
                 WHERE group_id = %s
-                ORDER BY boss_id, id DESC
-            ) t ON t.boss_id = b.id
-            ORDER BY t.death_time NULLS LAST
+                ORDER BY boss_id, respawn_time DESC
+            ) t ON b.id = t.boss_id
+            ORDER BY 
+                CASE WHEN t.respawn_time IS NULL THEN 1 ELSE 0 END, 
+                t.respawn_time ASC
         """, (group_id,))
         results = cursor.fetchall()
         cursor.close()
         conn.close()
 
+        tz = pytz.timezone('Asia/Taipei')
+        now = datetime.now(tz)
+        next_24hr = now + timedelta(hours=24)
         lines = ["🕓 接下來 24 小時內重生 BOSS：\n"]
-        for name, death_time, respawn_hours in results:
-            if death_time:
-                death_time = death_time.replace(tzinfo=tz)
-                respawn_time = death_time + timedelta(hours=respawn_hours)
-                if now <= respawn_time <= next_24hr:
-                    lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}\n")
-                elif now > respawn_time:
-                    delta = now - respawn_time
-                    cycles = int(delta.total_seconds() // (respawn_hours * 3600)) + 1
-                    lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}【過{cycles}】\n")
+
+        for name, time, hours in results:
+            if time:
+                time = time.replace(tzinfo=tz)
+                if now <= time <= next_24hr:
+                    lines.append(f"{time.strftime('%H:%M:%S')} {name}\n")
+                elif now > time:
+                    if hours:
+                        delta = now - time
+                        cycles = int(delta.total_seconds() // (hours * 3600)) + 1
+                        lines.append(f"{time.strftime('%H:%M:%S')} {name}【過{cycles}】\n")
+                    else:
+                        lines.append(f"{time.strftime('%H:%M:%S')} {name}\n")
                 else:
-                    lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}\n")
+                    lines.append(f"{time.strftime('%H:%M:%S')} {name}\n")
             else:
-                lines.append(f"__ : __ : __ {name}\n")
+                lines.append(f"__:__:__ {name}\n")
 
-        reply_text = "".join(lines)
-        try:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-        except Exception as e:
-            print("❌ 回覆失敗：", e)
-
-# 啟動 Flask
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+        reply_text = ''.join(lines)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
