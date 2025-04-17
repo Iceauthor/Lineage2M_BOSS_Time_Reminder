@@ -216,7 +216,7 @@ def handle_message(event):
                 SELECT DISTINCT ON (boss_id) boss_id, respawn_time
                 FROM boss_tasks
                 WHERE group_id = %s
-                ORDER BY boss_id, created_at DESC
+                ORDER BY boss_id, id DESC
             ) t ON t.boss_id = b.id
             ORDER BY t.respawn_time NULLS LAST
         """, (group_id,))
@@ -250,6 +250,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
         except Exception as e:
             print("❌ 回覆失敗：", e)
+
 
 
 # 自動推播：重生時間倒數兩分鐘提醒
