@@ -2,6 +2,7 @@
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from apscheduler.schedulers.background import BackgroundScheduler
 from dotenv import load_dotenv
 import os
 from db import get_boss_info_by_keyword, insert_kill_time
@@ -120,22 +121,58 @@ def handle_message(event):
     group_id = getattr(event.source, "group_id", "single")
     print(f"💬 收到使用者輸入：[{user_msg}]")
     print(f"📦 來源群組 ID：{group_id}")
-
-    if user_msg.lower().startswith("k "):
-        parts = user_msg.split()
-        if len(parts) >= 2:
-            keyword = parts[1]
-            boss_info = get_boss_info_by_keyword(keyword)
-            if boss_info:
-                now = datetime.now(tz)
-                respawn = now + timedelta(hours=boss_info["respawn_hours"])
-                insert_kill_time(boss_info["boss_id"], group_id, now, respawn)
-                reply = f"✔️ 已記錄擊殺：{boss_info['display_name']}\n死亡：{now.strftime('%Y-%m-%d %H:%M:%S')}\n重生：{respawn.strftime('%Y-%m-%d %H:%M:%S')}"
-                print("✅ 已寫入 BOSS 擊殺資料")
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+    
+    if user_msg.lower().startswith("add "):
+        try:
+            _, keyword, display_name = user_msg.split()
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM boss_list WHERE display_name = %s", (display_name,))
+            row = cursor.fetchone()
+            if not row:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 無此 BOSS 名稱"))
+                return
+            boss_id = row[0]
+            cursor.execute("SELECT 1 FROM boss_aliases WHERE boss_id = %s AND keyword = %s", (boss_id, keyword.lower()))
+            if not cursor.fetchone():
+                cursor.execute("INSERT INTO boss_aliases (boss_id, keyword) VALUES (%s, %s)", (boss_id, keyword.lower()))
+                conn.commit()
+                msg = f"✅ 已新增 {display_name} 的關鍵字：{keyword}"
             else:
-                print("⚠️ 關鍵字無對應 BOSS")
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 找不到 BOSS 關鍵字"))
+                msg = "⚠️ 該關鍵字已存在"
+            cursor.close()
+            conn.close()
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
+        except:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="❌ 指令錯誤：add 關鍵字 名稱"))
+
+    elif user_msg.lower() == "reset all":
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM boss_tasks WHERE group_id = %s", (group_id,))
+        conn.commit()
+        cursor.execute("SELECT display_name FROM boss_list")
+        bosses = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        reply = "\n".join([f"{b[0]}：__:__:__" for b in bosses])
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"✅ 已重設時間：\n{reply}"))
+
+    elif user_msg.lower().startswith("k "):
+            parts = user_msg.split()
+            if len(parts) >= 2:
+                keyword = parts[1]
+                boss_info = get_boss_info_by_keyword(keyword)
+                if boss_info:
+                    now = datetime.now(tz)
+                    respawn = now + timedelta(hours=boss_info["respawn_hours"])
+                    insert_kill_time(boss_info["boss_id"], group_id, now, respawn)
+                    reply = f"✔️ 已記錄擊殺：{boss_info['display_name']}\n死亡：{now.strftime('%Y-%m-%d %H:%M:%S')}\n重生：{respawn.strftime('%Y-%m-%d %H:%M:%S')}"
+                    print("✅ 已寫入 BOSS 擊殺資料")
+                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+                else:
+                    print("⚠️ 關鍵字無對應 BOSS")
+                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 找不到 BOSS 關鍵字"))
 
     elif user_msg.strip().lower() in ["kb all", "出"]:
         print("📌 成功觸發 KB ALL 查詢")
@@ -173,5 +210,40 @@ def handle_message(event):
         except Exception as e:
             print("❌ 回覆失敗：", e)
 
+
+# 自動推播：重生時間倒數兩分鐘提醒
+def reminder_job():
+    try:
+        now = datetime.now(tz)
+        soon = now + timedelta(minutes=2)
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT b.display_name, t.group_id, t.respawn_time
+            FROM boss_tasks t
+            JOIN boss_list b ON b.id = t.boss_id
+            WHERE t.respawn_time BETWEEN %s AND %s
+        """, (now, soon))
+        results = cursor.fetchall()
+        for name, group_id, respawn in results:
+            try:
+                msg = f"*{name}* 即將出現"
+                line_bot_api.push_message(group_id, TextSendMessage(text=msg))
+            except Exception as e:
+                print(f"❌ 提醒失敗：{e}")
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print("❌ 排程提醒錯誤：", e)
+
+
 if __name__ == "__main__":
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(reminder_job, "interval", minutes=1)
+    scheduler.start()
     app.run(port=5000)
+
+
+
+
+
