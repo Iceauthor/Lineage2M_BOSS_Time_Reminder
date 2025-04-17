@@ -187,45 +187,38 @@ def handle_message(event):
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 找不到 BOSS 關鍵字"))
 
     elif user_msg.strip().lower() in ["kb all", "出"]:
-        print("📌 成功觸發 KB ALL 查詢")
         conn = get_db_connection()
         cursor = conn.cursor()
         now = datetime.now(tz)
         next_24hr = now + timedelta(hours=24)
 
-        query = """
-            SELECT b.display_name, t.respawn_time
-            FROM boss_tasks t
-            JOIN boss_list b ON t.boss_id = b.id
-            WHERE t.group_id = %s
-            AND t.respawn_time BETWEEN %s AND %s
-            AND t.id IN (
-                SELECT MAX(id) FROM boss_tasks
-                WHERE group_id = %s
-                GROUP BY boss_id
-            )
-            ORDER BY t.respawn_time
-        """
-        cursor.execute(query, (group_id, now, next_24hr, group_id))
+        cursor.execute("""
+            SELECT b.display_name, MAX(t.respawn_time)
+            FROM boss_list b
+            LEFT JOIN boss_tasks t ON t.boss_id = b.id AND t.group_id = %s
+            GROUP BY b.id
+            ORDER BY MAX(t.respawn_time) NULLS LAST
+        """, (group_id,))
         results = cursor.fetchall()
         cursor.close()
         conn.close()
 
         print(f"📊 查詢結果：共 {len(results)} 筆")
-
-        if results:
-            lines = ["🕓 接下來 24 小時內重生 BOSS："]
-            for name, time in results:
+        lines = ["🕓 接下來 24 小時內重生 BOSS："]
+        for name, time in results:
+            if time and now <= time <= next_24hr:
                 local_time = time.astimezone(tz)
                 lines.append(f"{name}：{local_time.strftime('%Y-%m-%d %H:%M:%S')}")
-            reply_text = "\n".join(lines)
-        else:
-            reply_text = "⚠️ 未找到 24 小時內即將重生的 BOSS"
+            else:
+                lines.append(f"{name}：____-__-__ __:__:__")
+
+        reply_text = "".join(lines)
 
         try:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
         except Exception as e:
             print("❌ 回覆失敗：", e)
+
 
 # 自動推播：重生時間倒數兩分鐘提醒
 def reminder_job():
