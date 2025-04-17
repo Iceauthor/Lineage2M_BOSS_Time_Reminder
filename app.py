@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 import pytz
 
 load_dotenv()
-
 app = Flask(__name__)
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
@@ -33,6 +32,84 @@ def get_respawn_hours_by_name(name):
     conn.close()
     return result[0] if result else None
 
+
+# 自動清理重複 boss_aliases 並建立唯一索引
+def cleanup_boss_aliases():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            DELETE FROM boss_aliases a
+            USING boss_aliases b
+            WHERE
+                a.ctid < b.ctid
+                AND a.boss_id = b.boss_id
+                AND a.keyword = b.keyword;
+        """)
+        print("✅ 已清除重複 boss_aliases")
+
+        cursor.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_boss_keyword_unique
+            ON boss_aliases (boss_id, keyword);
+        """)
+        print("✅ 已建立唯一索引")
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print("❌ 清理/索引建立失敗：", e)
+
+
+# 自動匯入 boss_list.json 資料
+def auto_insert_boss_list():
+    print("🚀 執行 BOSS 自動匯入")
+    try:
+        with open("boss_list.json", "r", encoding="utf-8") as f:
+            bosses = json.load(f)
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        for boss in bosses:
+            display_name = boss["display_name"]
+            respawn_hours = boss["respawn_hours"]
+            keywords = boss["keywords"]
+
+            cursor.execute("SELECT id FROM boss_list WHERE display_name = %s", (display_name,))
+            row = cursor.fetchone()
+            if row:
+                boss_id = row[0]
+            else:
+                cursor.execute("INSERT INTO boss_list (display_name, respawn_hours) VALUES (%s, %s) RETURNING id",
+                               (display_name, respawn_hours))
+                boss_id = cursor.fetchone()[0]
+
+            for keyword in keywords:
+                cursor.execute("SELECT 1 FROM boss_aliases WHERE boss_id = %s AND keyword = %s",
+                               (boss_id, keyword.lower()))
+                if not cursor.fetchone():
+                    cursor.execute("INSERT INTO boss_aliases (boss_id, keyword) VALUES (%s, %s)",
+                                   (boss_id, keyword.lower()))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print("✅ BOSS 資料匯入完成")
+    except Exception as e:
+        print("❌ 匯入錯誤：", e)
+
+
+# 啟動時先執行一次清理 + 匯入
+cleanup_boss_aliases()
+auto_insert_boss_list()
+
+
+@app.route("/", methods=["GET"])
+def home():
+    return "✅ Lineage2M BOSS Reminder Bot is running."
+
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
@@ -45,6 +122,77 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+
+    # 處理 kr1、kr2 克4 170124 格式，指定前日或前兩日死亡時間
+    if text.lower().startswith("kr1 ") or text.lower().startswith("kr2 "):
+        parts = text.split()
+        if len(parts) == 3:
+            prefix, keyword, timestr = parts
+            try:
+                hour = int(timestr[0:2])
+                minute = int(timestr[2:4])
+                second = int(timestr[4:6])
+                offset_days = 1 if prefix.lower() == "kr1" else 2
+                death_time = datetime.now(pytz.timezone("Asia/Taipei")) - timedelta(days=offset_days)
+                death_time = death_time.replace(hour=hour, minute=minute, second=second, microsecond=0)
+
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT b.id, b.display_name, b.respawn_hours
+                    FROM boss_aliases a
+                    JOIN boss_list b ON a.boss_id = b.id
+                    WHERE a.keyword = %s
+                """, (keyword,))
+                row = cursor.fetchone()
+                if row:
+                    boss_id, display_name, respawn_hours = row
+                    respawn_time = death_time + timedelta(hours=respawn_hours)
+                    cursor.execute(
+                        "INSERT INTO boss_tasks (boss_id, group_id, death_time, respawn_time) VALUES (%s, %s, %s, %s)",
+                        (boss_id, group_id, death_time, respawn_time)
+                    )
+                    conn.commit()
+                    reply_text = f"\n\n🔴 擊殺：{display_name}\n🕓 死亡：{death_time.strftime('%Y-%m-%d %H:%M:%S')}\n🟢 重生：{respawn_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                else:
+                    reply_text = "❌ 找不到該 BOSS 關鍵字。"
+                cursor.close()
+                conn.close()
+            except:
+                reply_text = "❌ 時間格式錯誤，請使用 kr1 克4 170124 的格式。"
+        else:
+            reply_text = "❌ 指令格式錯誤，請使用 kr1 克4 170124 的格式。"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+        return
+    # 處理 K、k 指令作為擊殺紀錄
+    if text.lower().startswith("k "):
+        keyword = text[2:].strip()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT b.id, b.display_name, b.respawn_hours
+            FROM boss_aliases a
+            JOIN boss_list b ON a.boss_id = b.id
+            WHERE a.keyword = %s
+        """, (keyword,))
+        row = cursor.fetchone()
+        if row:
+            boss_id, display_name, respawn_hours = row
+            now = datetime.now(pytz.timezone('Asia/Taipei'))
+            respawn_time = now + timedelta(hours=respawn_hours)
+            cursor.execute(
+                "INSERT INTO boss_tasks (boss_id, group_id, death_time, respawn_time) VALUES (%s, %s, %s, %s)",
+                (boss_id, group_id, now, respawn_time)
+            )
+            conn.commit()
+            reply_text = f"\n\n🔴 擊殺：{display_name}\n🕓 死亡：{now.strftime('%Y-%m-%d %H:%M:%S')}\n🟢 重生：{respawn_time.strftime('%Y-%m-%d %H:%M:%S')}"
+        else:
+            reply_text = "❌ 無法辨識的關鍵字，請先使用 add 指令新增。"
+        cursor.close()
+        conn.close()
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+        return
+
     text = event.message.text.strip().lower()
     group_id = event.source.group_id if event.source.type == "group" else "single"
     if text in ["kb all", "出"]:
@@ -91,3 +239,37 @@ def handle_message(event):
 
         reply_text = ''.join(lines)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
+
+# 自動推播：重生時間倒數兩分鐘提醒
+def reminder_job():
+    try:
+        now = datetime.now(tz)
+        soon = now + timedelta(minutes=2)
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT b.display_name, t.group_id, t.respawn_time
+            FROM boss_tasks t
+            JOIN boss_list b ON b.id = t.boss_id
+            WHERE t.respawn_time BETWEEN %s AND %s
+        """, (now, soon))
+        results = cursor.fetchall()
+        for name, group_id, respawn in results:
+            try:
+                msg = f"*{name}* 即將出現"
+                line_bot_api.push_message(group_id, TextSendMessage(text=msg))
+            except Exception as e:
+                print(f"❌ 提醒失敗：{e}")
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print("❌ 排程提醒錯誤：", e)
+
+
+if __name__ == "__main__":
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(reminder_job, "interval", minutes=1)
+    scheduler.start()
+    app.run(port=5000)
+    
