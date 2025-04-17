@@ -145,6 +145,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
         except:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="❌ 指令錯誤：add 關鍵字 名稱"))
+            msg = f"❌ 指令錯誤：add 關鍵字 名稱"
 
     elif user_msg.lower() == "reset all":
         conn = get_db_connection()
@@ -166,13 +167,24 @@ def handle_message(event):
                 if boss_info:
                     now = datetime.now(tz)
                     respawn = now + timedelta(hours=boss_info["respawn_hours"])
+
+                    # ✅ 先刪除該群組該 BOSS 舊資料
+                    conn = get_db_connection()
+                    cursor = conn.cursor()
+                    cursor.execute("DELETE FROM boss_tasks WHERE boss_id = %s AND group_id = %s",
+                                   (boss_info["boss_id"], group_id))
+                    conn.commit()
+                    cursor.close()
+                    conn.close()
+
                     insert_kill_time(boss_info["boss_id"], group_id, now, respawn)
+
                     reply = f"✔️ 已記錄擊殺：{boss_info['display_name']}\n死亡：{now.strftime('%Y-%m-%d %H:%M:%S')}\n重生：{respawn.strftime('%Y-%m-%d %H:%M:%S')}"
                     print("✅ 已寫入 BOSS 擊殺資料")
                     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
-                else:
-                    print("⚠️ 關鍵字無對應 BOSS")
-                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 找不到 BOSS 關鍵字"))
+            else:
+                print("⚠️ 關鍵字無對應 BOSS")
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 找不到 BOSS 關鍵字"))
 
     elif user_msg.strip().lower() in ["kb all", "出"]:
         print("📌 成功觸發 KB ALL 查詢")
@@ -210,7 +222,6 @@ def handle_message(event):
         except Exception as e:
             print("❌ 回覆失敗：", e)
 
-
 # 自動推播：重生時間倒數兩分鐘提醒
 def reminder_job():
     try:
@@ -235,7 +246,6 @@ def reminder_job():
         conn.close()
     except Exception as e:
         print("❌ 排程提醒錯誤：", e)
-
 
 if __name__ == "__main__":
     scheduler = BackgroundScheduler()
