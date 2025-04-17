@@ -1,5 +1,6 @@
-import json
+
 import os
+import json
 import psycopg2
 from flask import Flask, request, abort
 from dotenv import load_dotenv
@@ -120,10 +121,63 @@ def callback():
         abort(400)
     return 'OK'
 
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    text = event.message.text.strip()
+    group_id = event.source.group_id if event.source.type == "group" else "single"
+    
+    # 處理 K 克4 170124（當日指定時間）
+    if text.lower().startswith("k "):
+        parts = text.split()
+        if len(parts) == 3 and parts[2].isdigit() and len(parts[2]) == 6:
+            _, keyword, timestr = parts
+            try:
+                hour = int(timestr[0:2])
+                minute = int(timestr[2:4])
+                second = int(timestr[4:6])
+                tz = pytz.timezone("Asia/Taipei")
+                death_time = datetime.now(tz).replace(hour=hour, minute=minute, second=second, microsecond=0)
 
-    # 處理 kr1、kr2 克4 170124 格式，指定前日或前兩日死亡時間
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT b.id, b.display_name, b.respawn_hours
+                    FROM boss_aliases a
+                    JOIN boss_list b ON a.boss_id = b.id
+                    WHERE a.keyword = %s
+                """, (keyword,))
+                row = cursor.fetchone()
+                if row:
+                    boss_id, display_name, respawn_hours = row
+                    respawn_time = death_time + timedelta(hours=respawn_hours)
+                    cursor.execute(
+                        "INSERT INTO boss_tasks (boss_id, group_id, death_time, respawn_time) VALUES (%s, %s, %s, %s)",
+                        (boss_id, group_id, death_time, respawn_time)
+                    )
+                    conn.commit()
+                    reply_text = f"\n\n🔴 擊殺：{display_name}\n🕓 死亡：{death_time.strftime('%Y-%m-%d %H:%M:%S')}\n🟢 重生：{respawn_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                else:
+                    reply_text = "❌ 找不到該 BOSS 關鍵字。"
+                cursor.close()
+                conn.close()
+            except:
+                reply_text = "❌ 時間格式錯誤，請使用 K 克4 170124 的格式。"
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+            return
+
+    # 處理 /clear all 指令：清除該群組所有 BOSS 紀錄
+    if text.lower().strip() == "/clear all":
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM boss_tasks WHERE group_id = %s", (group_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 已清除本群組所有 BOSS 紀錄"))
+        return
+
+# 處理 kr1、kr2 克4 170124 格式，指定前日或前兩日死亡時間
     if text.lower().startswith("kr1 ") or text.lower().startswith("kr2 "):
         parts = text.split()
         if len(parts) == 3:
