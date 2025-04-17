@@ -15,7 +15,6 @@ load_dotenv()
 tz = pytz.timezone("Asia/Taipei")
 
 
-
 def get_respawn_hours_by_name(name):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -24,6 +23,7 @@ def get_respawn_hours_by_name(name):
     cursor.close()
     conn.close()
     return row[0] if row else None
+
 
 def get_db_connection():
     return psycopg2.connect(
@@ -252,7 +252,6 @@ def handle_message(event):
             print("❌ 回覆失敗：", e)
 
 
-
 # 自動推播：重生時間倒數兩分鐘提醒
 def reminder_job():
     try:
@@ -277,6 +276,7 @@ def reminder_job():
         conn.close()
     except Exception as e:
         print("❌ 排程提醒錯誤：", e)
+
 
 if __name__ == "__main__":
     scheduler = BackgroundScheduler()
