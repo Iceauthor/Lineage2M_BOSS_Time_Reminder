@@ -111,7 +111,7 @@
   },
   {
     "display_name": "佩爾利斯",
-    "respawn_hours": 8,
+    "respawn_hours": 0.5,
     "keywords": [
       "佩爾"
     ]
@@ -132,21 +132,21 @@
   },
   {
     "display_name": "坦佛斯特",
-    "respawn_hours": 8,
+    "respawn_hours": 1,
     "keywords": [
       "坦佛"
     ]
   },
   {
     "display_name": "布賴卡",
-    "respawn_hours": 8,
+    "respawn_hours": 0.5,
     "keywords": [
       "布賴"
     ]
   },
   {
     "display_name": "特論巴",
-    "respawn_hours": 8,
+    "respawn_hours": 1,
     "keywords": [
       "特論"
     ]
