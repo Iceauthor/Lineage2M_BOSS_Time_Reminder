@@ -206,9 +206,12 @@ def handle_message(event):
         print(f"📊 查詢結果：共 {len(results)} 筆")
         lines = ["🕓 接下來 24 小時內重生 BOSS："]
         for name, time in results:
-            if time and now <= time <= next_24hr:
-                local_time = time.astimezone(tz)
-                lines.append(f"{name}：{local_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            if time:
+                time = time.replace(tzinfo=tz)
+                if now <= time <= next_24hr:
+                    lines.append(f"{name}：{time.strftime('%Y-%m-%d %H:%M:%S')}")
+                else:
+                    lines.append(f"{name}：____-__-__ __:__:__")
             else:
                 lines.append(f"{name}：____-__-__ __:__:__")
 
