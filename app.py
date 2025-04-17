@@ -5,10 +5,11 @@ from dotenv import load_dotenv
 import os
 from db import get_boss_info_by_keyword, insert_kill_time
 from datetime import datetime, timedelta
+import pytz
 import psycopg2
-import json
 
 load_dotenv()
+tz = pytz.timezone("Asia/Taipei")
 
 required_vars = ["LINE_CHANNEL_ACCESS_TOKEN", "LINE_CHANNEL_SECRET"]
 for var in required_vars:
@@ -58,10 +59,10 @@ def handle_message(event):
             keyword = parts[1]
             boss_info = get_boss_info_by_keyword(keyword)
             if boss_info:
-                now = datetime.now()
+                now = datetime.now(tz)
                 respawn = now + timedelta(hours=boss_info["respawn_hours"])
                 insert_kill_time(boss_info["boss_id"], group_id, now, respawn)
-                reply = f"✔️ 已記錄擊殺：{boss_info['display_name']}\n死亡：{now}\n重生：{respawn}"
+                reply = f"✔️ 已記錄擊殺：{boss_info['display_name']}\n死亡：{now.strftime('%Y-%m-%d %H:%M:%S')}\n重生：{respawn.strftime('%Y-%m-%d %H:%M:%S')}"
                 print("✅ 已寫入 BOSS 擊殺資料")
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
             else:
@@ -72,7 +73,7 @@ def handle_message(event):
         print("📌 成功觸發 KB ALL 查詢")
         conn = get_db_connection()
         cursor = conn.cursor()
-        now = datetime.now()
+        now = datetime.now(tz)
         next_24hr = now + timedelta(hours=24)
 
         query = (
@@ -93,7 +94,8 @@ def handle_message(event):
         if results:
             lines = ["🕓 接下來 24 小時內重生 BOSS："]
             for name, time in results:
-                lines.append(f"{name}：{time.strftime('%Y-%m-%d %H:%M:%S')}")
+                local_time = time.astimezone(tz)
+                lines.append(f"{name}：{local_time.strftime('%Y-%m-%d %H:%M:%S')}")
             reply_text = "\n".join(lines)
         else:
             reply_text = "⚠️ 未找到 24 小時內即將重生的 BOSS"
@@ -101,7 +103,7 @@ def handle_message(event):
         try:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
         except Exception as e:
-            print("❌ 回覆 KB ALL 結果失敗：", e)
+            print("❌ 回覆失敗：", e)
 
 if __name__ == "__main__":
     app.run(port=5000)
