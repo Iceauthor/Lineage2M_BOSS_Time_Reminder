@@ -8,3 +8,4 @@ gtts
 pillow
 gunicorn
 psycopg2-binary
+pytz
