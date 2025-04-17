@@ -14,6 +14,17 @@ import json
 load_dotenv()
 tz = pytz.timezone("Asia/Taipei")
 
+
+
+def get_respawn_hours_by_name(name):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT respawn_hours FROM boss_list WHERE display_name = %s", (name,))
+    row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return row[0] if row else None
+
 def get_db_connection():
     return psycopg2.connect(
         host=os.getenv("DB_HOST"),
@@ -22,6 +33,7 @@ def get_db_connection():
         password=os.getenv("DB_PASSWORD"),
         dbname=os.getenv("DB_NAME")
     )
+
 
 # 自動清理重複 boss_aliases 並建立唯一索引
 def cleanup_boss_aliases():
@@ -50,6 +62,7 @@ def cleanup_boss_aliases():
         conn.close()
     except Exception as e:
         print("❌ 清理/索引建立失敗：", e)
+
 
 # 自動匯入 boss_list.json 資料
 def auto_insert_boss_list():
@@ -89,6 +102,7 @@ def auto_insert_boss_list():
     except Exception as e:
         print("❌ 匯入錯誤：", e)
 
+
 # 啟動時先執行一次清理 + 匯入
 cleanup_boss_aliases()
 auto_insert_boss_list()
@@ -98,9 +112,11 @@ line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 app = Flask(__name__)
 
+
 @app.route("/", methods=["GET"])
 def home():
     return "✅ Lineage2M BOSS Reminder Bot is running."
+
 
 @app.route("/callback", methods=["POST"])
 def callback():
@@ -114,6 +130,7 @@ def callback():
         print("❌ Webhook 錯誤：", str(e))
         abort(400)
     return "OK"
+
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -193,11 +210,15 @@ def handle_message(event):
         next_24hr = now + timedelta(hours=24)
 
         cursor.execute("""
-            SELECT b.display_name, MAX(t.respawn_time)
+            SELECT b.display_name, t.respawn_time
             FROM boss_list b
-            LEFT JOIN boss_tasks t ON t.boss_id = b.id AND t.group_id = %s
-            GROUP BY b.id
-            ORDER BY MAX(t.respawn_time) NULLS LAST
+            LEFT JOIN (
+                SELECT DISTINCT ON (boss_id) boss_id, respawn_time
+                FROM boss_tasks
+                WHERE group_id = %s
+                ORDER BY boss_id, created_at DESC
+            ) t ON t.boss_id = b.id
+            ORDER BY t.respawn_time NULLS LAST
         """, (group_id,))
         results = cursor.fetchall()
         cursor.close()
@@ -205,26 +226,30 @@ def handle_message(event):
 
         print(f"📊 查詢結果：共 {len(results)} 筆")
         lines = ["🕓 接下來 24 小時內重生 BOSS："]
+
         for name, time in results:
             if time:
                 time = time.replace(tzinfo=tz)
                 if now <= time <= next_24hr:
-                    lines.append(f"{name}：{time.strftime('%Y-%m-%d %H:%M:%S')}")
+                    lines.append(f"{time.strftime('%H:%M:%S')} {name}")
+                elif now > time:
+                    respawn_hours = get_respawn_hours_by_name(name)
+                    if respawn_hours:
+                        delta = now - time
+                        cycles = int(delta.total_seconds() // (respawn_hours * 3600)) + 1
+                        lines.append(f"{time.strftime('%H:%M:%S')} {name}【過{cycles}】")
+                    else:
+                        lines.append(f"{time.strftime('%H:%M:%S')} {name}")
                 else:
-                    lines.append(f"{name}：____-__-__ __:__:__")
+                    lines.append(f"{time.strftime('%H:%M:%S')} {name}")
             else:
-                lines.append(f"{name}：____-__-__ __:__:__")
+                lines.append(f"__ : __ : __ {name}")
 
-        # 為了避免 LINE 自動摺疊，分段每 20 筆一段送出
-        chunk_size = 20
-        for i in range(0, len(lines), chunk_size):
-            chunk = lines[i:i+chunk_size]
-            reply_text = "".join(chunk)
-            try:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-                event.reply_token = None  # 避免多次回覆用同一個 token 出錯
-            except Exception as e:
-                print("❌ 回覆失敗：", e)
+        reply_text = "".join(lines)
+        try:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+        except Exception as e:
+            print("❌ 回覆失敗：", e)
 
 
 # 自動推播：重生時間倒數兩分鐘提醒
