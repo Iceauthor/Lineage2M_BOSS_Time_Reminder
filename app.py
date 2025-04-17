@@ -193,15 +193,20 @@ def handle_message(event):
         now = datetime.now(tz)
         next_24hr = now + timedelta(hours=24)
 
-        query = (
-            "SELECT b.display_name, MIN(t.respawn_time) "
-            "FROM boss_tasks t "
-            "JOIN boss_list b ON t.boss_id = b.id "
-            "WHERE t.respawn_time BETWEEN %s AND %s "
-            "GROUP BY b.display_name "
-            "ORDER BY MIN(t.respawn_time)"
-        )
-        cursor.execute(query, (now, next_24hr))
+        query = """
+            SELECT b.display_name, t.respawn_time
+            FROM boss_tasks t
+            JOIN boss_list b ON t.boss_id = b.id
+            WHERE t.group_id = %s
+            AND t.respawn_time BETWEEN %s AND %s
+            AND t.id IN (
+                SELECT MAX(id) FROM boss_tasks
+                WHERE group_id = %s
+                GROUP BY boss_id
+            )
+            ORDER BY t.respawn_time
+        """
+        cursor.execute(query, (group_id, now, next_24hr, group_id))
         results = cursor.fetchall()
         cursor.close()
         conn.close()
