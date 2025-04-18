@@ -78,6 +78,8 @@ def auto_insert_boss_list():
 
     conn = get_db_connection()
     cursor = conn.cursor()
+    cursor.execute("DELETE FROM boss_aliases")
+    cursor.execute("DELETE FROM boss_list")
 
     for boss in bosses:
         display_name = boss["display_name"]
