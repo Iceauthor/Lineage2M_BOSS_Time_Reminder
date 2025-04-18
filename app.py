@@ -78,8 +78,7 @@ def auto_insert_boss_list():
 
     # 清空舊有資料
     cursor.execute("DELETE FROM boss_aliases")
-    cursor.execute("DELETE FROM boss_list")
-    print("✅ 已清除 boss_list 與 boss_aliases 資料")
+    print("✅ 已清除 boss_aliases 資料")
 
     for boss in bosses:
         display_name = boss["display_name"]
