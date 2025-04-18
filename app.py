@@ -69,51 +69,42 @@ def cleanup_boss_aliases():
 
 # 自動匯入 boss_list.json 資料
 def auto_insert_boss_list():
-    try:
-        with open("boss_list.json", "r", encoding="utf-8") as f:
-            bosses = json.load(f)
-    except Exception as e:
-        print("❌ boss_list.json 載入失敗：", e)
-        return
-
+    print("🚀 執行 BOSS 自動匯入")
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    with open("boss_list.json", "r", encoding="utf-8") as f:
+        bosses = json.load(f)
+
+    # 清空舊有資料
     cursor.execute("DELETE FROM boss_aliases")
     cursor.execute("DELETE FROM boss_list")
+    print("✅ 已清除 boss_list 與 boss_aliases 資料")
 
     for boss in bosses:
         display_name = boss["display_name"]
         respawn_hours = boss["respawn_hours"]
         keywords = boss["keywords"]
 
-        # 新增或取得 boss_list 資料
-        cursor.execute("SELECT id FROM boss_list WHERE display_name = %s", (display_name,))
-        row = cursor.fetchone()
-        if row:
-            boss_id = row[0]
-        else:
-            cursor.execute("""
-                INSERT INTO boss_list (display_name, respawn_hours)
-                VALUES (%s, %s)
-                RETURNING id
-            """, (display_name, respawn_hours))
-            boss_id = cursor.fetchone()[0]
+        # 新增 boss 主資料
+        cursor.execute("""
+            INSERT INTO boss_list (display_name, respawn_hours) 
+            VALUES (%s, %s) RETURNING id
+        """, (display_name, respawn_hours))
+        boss_id = cursor.fetchone()[0]
 
-        # 新增關鍵字（若不存在）
+        # 新增對應 keyword
         for keyword in keywords:
             cursor.execute("""
-                SELECT 1 FROM boss_aliases WHERE boss_id = %s AND keyword = %s
+                INSERT INTO boss_aliases (boss_id, keyword)
+                VALUES (%s, %s)
             """, (boss_id, keyword.lower()))
-            if not cursor.fetchone():
-                cursor.execute("""
-                    INSERT INTO boss_aliases (boss_id, keyword)
-                    VALUES (%s, %s)
-                """, (boss_id, keyword.lower()))
 
     conn.commit()
     cursor.close()
     conn.close()
     print("✅ BOSS 資料匯入完成")
+
 
 
 # 啟動時先執行一次清理 + 匯入
