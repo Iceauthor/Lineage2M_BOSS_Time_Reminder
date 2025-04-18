@@ -137,7 +137,7 @@ def handle_message(event):
                 minute = int(timestr[2:4])
                 second = int(timestr[4:6])
                 tz = pytz.timezone("Asia/Taipei")
-                death_time = datetime.now(tz).replace(hour=hour, minute=minute, second=second, microsecond=0)
+                kill_time = datetime.now(tz).replace(hour=hour, minute=minute, second=second, microsecond=0)
 
                 conn = get_db_connection()
                 cursor = conn.cursor()
@@ -150,13 +150,13 @@ def handle_message(event):
                 row = cursor.fetchone()
                 if row:
                     boss_id, display_name, respawn_hours = row
-                    respawn_time = death_time + timedelta(hours=respawn_hours)
+                    respawn_time = kill_time + timedelta(hours=respawn_hours)
                     cursor.execute(
-                        "INSERT INTO boss_tasks (boss_id, group_id, death_time, respawn_time) VALUES (%s, %s, %s, %s)",
-                        (boss_id, group_id, death_time, respawn_time)
+                        "INSERT INTO boss_tasks (boss_id, group_id, kill_time, respawn_time) VALUES (%s, %s, %s, %s)",
+                        (boss_id, group_id, kill_time, respawn_time)
                     )
                     conn.commit()
-                    reply_text = f"\n\n🔴 擊殺：{display_name}\n🕓 死亡：{death_time.strftime('%Y-%m-%d %H:%M:%S')}\n🟢 重生：{respawn_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                    reply_text = f"\n\n🔴 擊殺：{display_name}\n🕓 死亡：{kill_time.strftime('%Y-%m-%d %H:%M:%S')}\n🟢 重生：{respawn_time.strftime('%Y-%m-%d %H:%M:%S')}"
                 else:
                     reply_text = "❌ 找不到該 BOSS 關鍵字。"
                 cursor.close()
@@ -187,8 +187,8 @@ def handle_message(event):
                 minute = int(timestr[2:4])
                 second = int(timestr[4:6])
                 offset_days = 1 if prefix.lower() == "kr1" else 2
-                death_time = datetime.now(pytz.timezone("Asia/Taipei")) - timedelta(days=offset_days)
-                death_time = death_time.replace(hour=hour, minute=minute, second=second, microsecond=0)
+                kill_time = datetime.now(pytz.timezone("Asia/Taipei")) - timedelta(days=offset_days)
+                kill_time = kill_time.replace(hour=hour, minute=minute, second=second, microsecond=0)
 
                 conn = get_db_connection()
                 cursor = conn.cursor()
@@ -201,13 +201,13 @@ def handle_message(event):
                 row = cursor.fetchone()
                 if row:
                     boss_id, display_name, respawn_hours = row
-                    respawn_time = death_time + timedelta(hours=respawn_hours)
+                    respawn_time = kill_time + timedelta(hours=respawn_hours)
                     cursor.execute(
-                        "INSERT INTO boss_tasks (boss_id, group_id, death_time, respawn_time) VALUES (%s, %s, %s, %s)",
-                        (boss_id, group_id, death_time, respawn_time)
+                        "INSERT INTO boss_tasks (boss_id, group_id, kill_time, respawn_time) VALUES (%s, %s, %s, %s)",
+                        (boss_id, group_id, kill_time, respawn_time)
                     )
                     conn.commit()
-                    reply_text = f"\n\n🔴 擊殺：{display_name}\n🕓 死亡：{death_time.strftime('%Y-%m-%d %H:%M:%S')}\n🟢 重生：{respawn_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                    reply_text = f"\n\n🔴 擊殺：{display_name}\n🕓 死亡：{kill_time.strftime('%Y-%m-%d %H:%M:%S')}\n🟢 重生：{respawn_time.strftime('%Y-%m-%d %H:%M:%S')}"
                 else:
                     reply_text = "❌ 找不到該 BOSS 關鍵字。"
                 cursor.close()
@@ -235,7 +235,7 @@ def handle_message(event):
             now = datetime.now(pytz.timezone('Asia/Taipei'))
             respawn_time = now + timedelta(hours=respawn_hours)
             cursor.execute(
-                "INSERT INTO boss_tasks (boss_id, group_id, death_time, respawn_time) VALUES (%s, %s, %s, %s)",
+                "INSERT INTO boss_tasks (boss_id, group_id, kill_time, respawn_time) VALUES (%s, %s, %s, %s)",
                 (boss_id, group_id, now, respawn_time)
             )
             conn.commit()
