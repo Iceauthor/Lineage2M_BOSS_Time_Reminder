@@ -1,4 +1,4 @@
-
+from apscheduler.schedulers.background import BackgroundScheduler
 import os
 import json
 import psycopg2
@@ -9,7 +9,10 @@ from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 from datetime import datetime, timedelta
 import pytz
+from boss_auto_import import import_boss_list
 
+
+import_boss_list()
 load_dotenv()
 app = Flask(__name__)
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
@@ -37,69 +40,80 @@ def get_respawn_hours_by_name(name):
 # 自動清理重複 boss_aliases 並建立唯一索引
 def cleanup_boss_aliases():
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        def cleanup_boss_aliases():
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                DELETE FROM boss_aliases a
+                USING boss_aliases b
+                WHERE a.id < b.id
+                  AND a.boss_id = b.boss_id
+                  AND a.keyword = b.keyword
+            """)
+            cursor.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_indexes WHERE indexname = 'unique_boss_keyword'
+                    ) THEN
+                        CREATE UNIQUE INDEX unique_boss_keyword ON boss_aliases(boss_id, keyword);
+                    END IF;
+                END$$;
+            """)
+            conn.commit()
+            cursor.close()
+            conn.close()
+            print("✅ 已清除重複 boss_aliases\n✅ 已建立唯一索引")
 
-        cursor.execute("""
-            DELETE FROM boss_aliases a
-            USING boss_aliases b
-            WHERE
-                a.ctid < b.ctid
-                AND a.boss_id = b.boss_id
-                AND a.keyword = b.keyword;
-        """)
-        print("✅ 已清除重複 boss_aliases")
-
-        cursor.execute("""
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_boss_keyword_unique
-            ON boss_aliases (boss_id, keyword);
-        """)
-        print("✅ 已建立唯一索引")
-
-        conn.commit()
-        cursor.close()
-        conn.close()
     except Exception as e:
         print("❌ 清理/索引建立失敗：", e)
 
 
 # 自動匯入 boss_list.json 資料
 def auto_insert_boss_list():
-    print("🚀 執行 BOSS 自動匯入")
     try:
         with open("boss_list.json", "r", encoding="utf-8") as f:
             bosses = json.load(f)
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        for boss in bosses:
-            display_name = boss["display_name"]
-            respawn_hours = boss["respawn_hours"]
-            keywords = boss["keywords"]
-
-            cursor.execute("SELECT id FROM boss_list WHERE display_name = %s", (display_name,))
-            row = cursor.fetchone()
-            if row:
-                boss_id = row[0]
-            else:
-                cursor.execute("INSERT INTO boss_list (display_name, respawn_hours) VALUES (%s, %s) RETURNING id",
-                               (display_name, respawn_hours))
-                boss_id = cursor.fetchone()[0]
-
-            for keyword in keywords:
-                cursor.execute("SELECT 1 FROM boss_aliases WHERE boss_id = %s AND keyword = %s",
-                               (boss_id, keyword.lower()))
-                if not cursor.fetchone():
-                    cursor.execute("INSERT INTO boss_aliases (boss_id, keyword) VALUES (%s, %s)",
-                                   (boss_id, keyword.lower()))
-
-        conn.commit()
-        cursor.close()
-        conn.close()
-        print("✅ BOSS 資料匯入完成")
     except Exception as e:
-        print("❌ 匯入錯誤：", e)
+        print("❌ boss_list.json 載入失敗：", e)
+        return
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    for boss in bosses:
+        display_name = boss["display_name"]
+        respawn_hours = boss["respawn_hours"]
+        keywords = boss["keywords"]
+
+        # 新增或取得 boss_list 資料
+        cursor.execute("SELECT id FROM boss_list WHERE display_name = %s", (display_name,))
+        row = cursor.fetchone()
+        if row:
+            boss_id = row[0]
+        else:
+            cursor.execute("""
+                INSERT INTO boss_list (display_name, respawn_hours)
+                VALUES (%s, %s)
+                RETURNING id
+            """, (display_name, respawn_hours))
+            boss_id = cursor.fetchone()[0]
+
+        # 新增關鍵字（若不存在）
+        for keyword in keywords:
+            cursor.execute("""
+                SELECT 1 FROM boss_aliases WHERE boss_id = %s AND keyword = %s
+            """, (boss_id, keyword.lower()))
+            if not cursor.fetchone():
+                cursor.execute("""
+                    INSERT INTO boss_aliases (boss_id, keyword)
+                    VALUES (%s, %s)
+                """, (boss_id, keyword.lower()))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("✅ BOSS 資料匯入完成")
 
 
 # 啟動時先執行一次清理 + 匯入
@@ -267,6 +281,7 @@ def handle_message(event):
                 t.respawn_time ASC
         """, (group_id,))
         results = cursor.fetchall()
+        print(f"📊 查詢結果：{results}")
         cursor.close()
         conn.close()
 
