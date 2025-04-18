@@ -3,6 +3,8 @@
     "display_name": "被汙染的克魯瑪",
     "respawn_hours": 8,
     "keywords": [
+      "被汙染的克魯瑪",
+      "ㄎㄎㄎ",
       "克4",
       "K4",
       "k4"
@@ -12,22 +14,37 @@
     "display_name": "司穆艾爾",
     "respawn_hours": 12,
     "keywords": [
+      "司穆艾爾",
       "司穆",
+      "象三",
+      "s3",
+      "3F",
+      "C3",
       "象3",
       "3"
     ]
   },
   {
     "display_name": "塔金",
-    "respawn_hours": 6,
+    "respawn_hours": 8,
     "keywords": [
-      "塔金"
+      "塔金",
+      "ㄊㄐ",
+      "TG",
+      "tj"
     ]
   },
   {
     "display_name": "提米特利斯",
     "respawn_hours": 8,
     "keywords": [
+      "提米特利斯",
+      "樹王",
+      "樹",
+      "tREE",
+      "安特",
+      "timi1",
+      "樹人",
       "提米"
     ]
   },
@@ -35,246 +52,397 @@
     "display_name": "突變克魯瑪",
     "respawn_hours": 8,
     "keywords": [
+      "突變克魯瑪",
+      "烏龜",
+      "龜",
+      "沼澤",
+      "ㄎㄌㄇ",
+      "klm",
       "突克",
       "突變"
     ]
   },
   {
     "display_name": "希瑟雷蒙",
-    "respawn_hours": 8,
+    "respawn_hours": 6,
     "keywords": [
+      "希瑟雷蒙",
+      "激戰",
+      "大蛇",
+      "檸檬",
+      "CC",
+      "cs",
       "希瑟"
     ]
   },
   {
     "display_name": "潘納洛德",
-    "respawn_hours": 8,
+    "respawn_hours": 5,
     "keywords": [
+      "潘納洛德",
+      "哥肯",
+      "大潘",
+      "bp",
       "潘納"
     ]
   },
   {
     "display_name": "黑色蕾爾莉",
-    "respawn_hours": 8,
+    "respawn_hours": 12,
     "keywords": [
+      "黑色蕾爾莉",
+      "迴廊",
+      "ㄏㄏㄏ",
+      "ZZ",
+      "死迴",
       "黑蕾"
     ]
   },
   {
     "display_name": "拉何",
-    "respawn_hours": 8,
+    "respawn_hours": 33,
     "keywords": [
-      "拉何"
+      "拉何",
+      "ㄌㄏ",
+      "國境",
+      "國境地帶",
+      "lh"
     ]
   },
   {
     "display_name": "寇倫",
-    "respawn_hours": 8,
+    "respawn_hours": 12,
     "keywords": [
-      "寇倫"
+      "寇倫",
+      "象2",
+      "象二",
+      "2",
+      "s2",
+      "2F",
+      "C2"
     ]
   },
   {
     "display_name": "提米妮爾",
     "respawn_hours": 8,
     "keywords": [
+      "提米妮爾",
+      "妖精",
+      "蝴蝶",
+      "小君",
+      "EG",
+      "timi2",
       "提妮"
     ]
   },
   {
     "display_name": "卡坦",
-    "respawn_hours": 8,
+    "respawn_hours": 10,
     "keywords": [
-      "卡坦"
+      "卡坦",
+      "克6",
+      "ㄎㄎㄎㄎㄎㄎ",
+      "ㄎㄊ",
+      "K6",
+      "k6",
+      "kt"
     ]
   },
   {
     "display_name": "巴實那",
-    "respawn_hours": 8,
+    "respawn_hours": 4,
     "keywords": [
+      "巴實那",
+      "80",
+      "810",
       "巴實"
     ]
   },
   {
     "display_name": "蘭多勒",
-    "respawn_hours": 8,
+    "respawn_hours": 9,
     "keywords": [
+      "蘭多勒",
+      "鳥",
+      "忘卻",
+      "BIRD",
+      "ldl",
       "蘭多"
     ]
   },
   {
     "display_name": "卡雷斯",
-    "respawn_hours": 8,
+    "respawn_hours": 9,
     "keywords": [
+      "卡雷斯",
+      "ㄎㄌ",
+      "kls",
       "卡雷"
     ]
   },
   {
     "display_name": "佩爾利斯",
-    "respawn_hours": 0.5,
+    "respawn_hours": 3,
     "keywords": [
-      "佩爾"
+      "佩爾利斯",
+      "佩爾",
+      "蜜蜂",
+      "貓",
+      "cat",
+      "mm"
     ]
   },
   {
     "display_name": "貝希莫斯",
-    "respawn_hours": 8,
+    "respawn_hours": 9,
     "keywords": [
+      "貝希莫斯",
+      "龍北",
+      "ㄌㄅ",
+      "bsms",
+      "綠龍",
       "貝希"
     ]
   },
   {
     "display_name": "賽魯",
-    "respawn_hours": 8,
+    "respawn_hours": 12,
     "keywords": [
-      "賽魯"
+      "賽魯",
+      "賽",
+      "塞",
+      "sl"
     ]
   },
   {
     "display_name": "坦佛斯特",
-    "respawn_hours": 1,
+    "respawn_hours": 6,
     "keywords": [
+      "坦佛斯特",
+      "太平",
+      "刑場",
+      "司令",
+      "T4",
       "坦佛"
     ]
   },
   {
     "display_name": "布賴卡",
-    "respawn_hours": 0.5,
+    "respawn_hours": 6,
     "keywords": [
+      "布賴卡",
+      "ㄅ",
+      "plk",
+      "blk",
+      "不賴",
       "布賴"
     ]
   },
   {
     "display_name": "特論巴",
-    "respawn_hours": 1,
+    "respawn_hours": 7,
     "keywords": [
+      "特論巴",
+      "特倫巴",
+      "血沼",
+      "tlb",
       "特論"
     ]
   },
   {
     "display_name": "魔圖拉",
-    "respawn_hours": 8,
+    "respawn_hours": 6,
     "keywords": [
+      "魔圖拉",
+      "掠奪",
+      "ㄇㄊ",
+      "魔",
+      "MTL",
+      "ld",
       "魔圖"
     ]
   },
   {
     "display_name": "弗林特",
-    "respawn_hours": 8,
+    "respawn_hours": 5,
     "keywords": [
+      "弗林特",
+      "佛林特",
+      "狗",
+      "flt",
+      "蜘蛛",
       "弗林"
     ]
   },
   {
     "display_name": "潘柴特",
-    "respawn_hours": 8,
+    "respawn_hours": 12,
     "keywords": [
+      "潘柴特",
+      "潘",
+      "丘陵",
+      "小潘",
+      "SP",
       "潘柴"
     ]
   },
   {
     "display_name": "瓦柏",
-    "respawn_hours": 8,
+    "respawn_hours": 12,
     "keywords": [
-      "瓦柏"
+      "瓦柏",
+      "山賊",
+      "瓦伯",
+      "wb"
     ]
   },
   {
     "display_name": "安庫拉",
-    "respawn_hours": 8,
+    "respawn_hours": 6,
     "keywords": [
+      "安庫拉",
+      "草地",
+      "草",
+      "akl",
       "安庫"
     ]
   },
   {
     "display_name": "薩班",
-    "respawn_hours": 8,
+    "respawn_hours": 12,
     "keywords": [
-      "薩班"
+      "薩班",
+      "SB",
+      "12",
+      "e2"
     ]
   },
   {
     "display_name": "史坦",
-    "respawn_hours": 8,
+    "respawn_hours": 7,
     "keywords": [
-      "史坦"
+      "史坦",
+      "屎",
+      "st",
+      "ST",
+      "巨人"
     ]
   },
   {
     "display_name": "采爾圖巴",
-    "respawn_hours": 8,
+    "respawn_hours": 6,
     "keywords": [
+      "采爾圖巴",
+      "爾",
+      "采",
+      "圖巴",
+      "tb",
+      "採爾",
       "采爾"
     ]
   },
   {
     "display_name": "忘卻之鏡",
-    "respawn_hours": 8,
+    "respawn_hours": 11,
     "keywords": [
+      "忘卻之鏡",
+      "鏡子",
+      "鏡",
+      "mr",
       "忘卻"
     ]
   },
   {
     "display_name": "奧爾芬",
-    "respawn_hours": 8,
+    "respawn_hours": 24,
     "keywords": [
-      "奧爾"
+      "奧爾芬",
+      "芬芬",
+      "ㄈㄈ",
+      "小芬"
     ]
   },
   {
     "display_name": "大地祭壇",
-    "respawn_hours": 8,
+    "respawn_hours": 18,
     "keywords": [
-      "地祭"
+      "地"
     ]
   },
   {
     "display_name": "水之祭壇",
-    "respawn_hours": 8,
+    "respawn_hours": 18,
     "keywords": [
-      "水祭"
+      "水"
     ]
   },
   {
     "display_name": "風之祭壇",
-    "respawn_hours": 8,
+    "respawn_hours": 12,
     "keywords": [
-      "風祭"
+      "風"
     ]
   },
   {
     "display_name": "黑闇祭壇",
-    "respawn_hours": 8,
+    "respawn_hours": 12,
     "keywords": [
-      "黑祭"
+      "闇",
+      "暗"
     ]
   },
   {
     "display_name": "猛龍獸",
-    "respawn_hours": 8,
+    "respawn_hours": 12,
     "keywords": [
+      "猛龍獸",
+      "ㄇㄌ",
+      "猛",
+      "6",
+      "龍6",
+      "D6",
       "猛龍"
     ]
   },
   {
     "display_name": "鳳凰",
-    "respawn_hours": 8,
+    "respawn_hours": 24,
     "keywords": [
-      "鳳凰"
+      "鳳凰",
+      "火鳥",
+      "fc",
+      "kfc",
+      "PH"
     ]
   },
   {
     "display_name": "卡布里歐",
-    "respawn_hours": 8,
+    "respawn_hours": 12,
     "keywords": [
+      "卡布里歐",
+      "kb",
+      "卡",
+      "ㄎㄅ",
+      "國立",
+      "墓地",
       "卡布"
     ]
   },
   {
     "display_name": "巨蟻女王",
-    "respawn_hours": 8,
+    "respawn_hours": 6,
     "keywords": [
+      "巨蟻女王",
+      "螞蟻",
+      "蟻3",
       "蟻后",
+      "蟻媽媽",
+      "ㄇㄇㄇ",
+      "ㄇㄇ",
+      "媽",
+      "蟻",
+      "13",
+      "e3",
       "巨蟻"
     ]
   },
@@ -282,112 +450,191 @@
     "display_name": "克拉奇",
     "respawn_hours": 8,
     "keywords": [
-      "克拉"
+      "克拉奇",
+      "克拉",
+      "ㄑㄑㄑ",
+      "777",
+      "klg",
+      "ㄎㄌㄑ"
     ]
   },
   {
     "display_name": "雷比魯",
-    "respawn_hours": 8,
+    "respawn_hours": 7,
     "keywords": [
+      "雷比魯",
+      "香菇",
+      "jj",
+      "lbl",
       "雷比"
     ]
   },
   {
     "display_name": "核心基座",
-    "respawn_hours": 8,
+    "respawn_hours": 10,
     "keywords": [
-      "核心"
+      "核心基座",
+      "核心",
+      "基座",
+      "7F",
+      "ㄎ7",
+      "ㄎㄎㄎㄎㄎㄎㄎ",
+      "k7",
+      "K7",
+      "克7"
     ]
   },
   {
     "display_name": "納伊阿斯",
-    "respawn_hours": 8,
+    "respawn_hours": 15,
     "keywords": [
+      "納伊阿斯",
+      "阿斯",
+      "AS",
+      "水鹿",
       "納伊"
     ]
   },
   {
     "display_name": "安德拉斯",
-    "respawn_hours": 8,
+    "respawn_hours": 15,
     "keywords": [
+      "安德拉斯",
+      "adls",
+      "殺戮",
       "安德"
     ]
   },
   {
     "display_name": "霸拉克",
-    "respawn_hours": 8,
+    "respawn_hours": 20,
     "keywords": [
+      "霸拉克",
+      "芭樂",
+      "bala",
+      "86",
       "霸拉"
     ]
   },
   {
     "display_name": "哈普",
-    "respawn_hours": 8,
+    "respawn_hours": 20,
     "keywords": [
-      "哈普"
+      "哈普",
+      "ㄏㄆ",
+      "哈",
+      "ㄏ",
+      "hb"
     ]
   },
   {
     "display_name": "薩拉克斯",
-    "respawn_hours": 8,
+    "respawn_hours": 24,
     "keywords": [
+      "薩拉克斯",
+      "水龍",
+      "水龍王",
+      "sala",
       "薩拉"
     ]
   },
   {
     "display_name": "歐克斯",
-    "respawn_hours": 8,
+    "respawn_hours": 24,
     "keywords": [
+      "歐克斯",
+      "歐",
+      "oks",
       "歐克"
     ]
   },
   {
     "display_name": "摩德烏斯",
-    "respawn_hours": 8,
+    "respawn_hours": 24,
     "keywords": [
+      "摩德烏斯",
+      "摩斯",
+      "MOS",
+      "摩德",
+      "蒼蠅",
+      "蟑螂",
+      "鎢絲",
       "摩德"
     ]
   },
   {
     "display_name": "巴倫",
-    "respawn_hours": 8,
+    "respawn_hours": 24,
     "keywords": [
-      "巴倫"
+      "巴倫",
+      "bl",
+      "BL"
     ]
   },
   {
     "display_name": "塔那透斯",
-    "respawn_hours": 8,
+    "respawn_hours": 25,
     "keywords": [
+      "塔那透斯",
+      "古戰場",
+      "ㄊㄋ",
+      "ㄊㄋㄊㄙ",
+      "ㄊㄋㄋㄉ",
+      "ㄊㄙ",
+      "透斯",
+      "tnts",
       "塔那"
     ]
   },
   {
     "display_name": "黑卡頓",
-    "respawn_hours": 8,
+    "respawn_hours": 24,
     "keywords": [
+      "黑卡頓",
+      "BKT",
       "黑卡"
     ]
   },
   {
     "display_name": "梅杜莎",
-    "respawn_hours": 8,
+    "respawn_hours": 10,
     "keywords": [
+      "梅杜莎",
+      "蛇",
+      "蛇女",
+      "MDS",
       "梅杜"
     ]
   },
   {
     "display_name": "沙勒卡",
-    "respawn_hours": 8,
+    "respawn_hours": 10,
     "keywords": [
+      "沙勒卡",
+      "蜥蜴人",
+      "slk",
+      "CE",
       "沙勒"
     ]
   },
   {
     "display_name": "凱索思",
-    "respawn_hours": 8,
+    "respawn_hours": 10,
     "keywords": [
-      "凱索"
+      "凱索思",
+      "kss",
+      "凱",
+      "絕望"
+    ]
+  },
+  {
+    "display_name": "塔拉金",
+    "respawn_hours": 10,
+    "keywords": [
+      "塔拉金",
+      "叛亂軍",
+      "叛亂",
+      "tlg"
     ]
   }
 ]
