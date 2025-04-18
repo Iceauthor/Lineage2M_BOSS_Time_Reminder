@@ -256,11 +256,12 @@ def handle_message(event):
             SELECT b.display_name, t.respawn_time, b.respawn_hours
             FROM boss_list b
             LEFT JOIN (
-                SELECT DISTINCT ON (boss_id) boss_id, respawn_time
+                SELECT boss_id, MAX(respawn_time) AS respawn_time
                 FROM boss_tasks
                 WHERE group_id = %s
-                ORDER BY boss_id, respawn_time DESC
+                GROUP BY boss_id
             ) t ON b.id = t.boss_id
+
             ORDER BY 
                 CASE WHEN t.respawn_time IS NULL THEN 1 ELSE 0 END, 
                 t.respawn_time ASC
