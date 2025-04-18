@@ -335,6 +335,35 @@ def reminder_job():
         print("❌ 排程提醒錯誤：", e)
 
 
+@app.route("/debug-respawn", methods=["GET"])
+def debug_respawn_route():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT 
+            b.display_name AS boss_name,
+            t.kill_time,
+            t.respawn_time,
+            b.respawn_hours,
+            EXTRACT(EPOCH FROM (t.respawn_time - t.kill_time)) / 3600 AS actual_hours,
+            (EXTRACT(EPOCH FROM (t.respawn_time - t.kill_time)) / 3600) - b.respawn_hours AS hour_difference
+        FROM boss_tasks t
+        JOIN boss_list b ON t.boss_id = b.id
+        ORDER BY t.respawn_time DESC
+        LIMIT 20
+    """)
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    output = "<h2>重生時間誤差檢查</h2><ul>"
+    for row in rows:
+        boss, kill, respawn, expected, actual, diff = row
+        output += f"<li><b>{boss}</b>：預期 {expected} 小時，實際 {actual:.2f} 小時，誤差 {diff:.2f} 小時</li>"
+    output += "</ul>"
+    return output
+
+
 if __name__ == "__main__":
     scheduler = BackgroundScheduler()
     scheduler.add_job(reminder_job, "interval", minutes=1)
