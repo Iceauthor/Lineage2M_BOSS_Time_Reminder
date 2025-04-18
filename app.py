@@ -9,10 +9,8 @@ from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 from datetime import datetime, timedelta
 import pytz
-from boss_auto_import import import_boss_list
 
 
-import_boss_list()
 load_dotenv()
 app = Flask(__name__)
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
@@ -155,11 +153,12 @@ def handle_message(event):
 
                 conn = get_db_connection()
                 cursor = conn.cursor()
+                keyword = keyword.lower()
                 cursor.execute("""
                     SELECT b.id, b.display_name, b.respawn_hours
                     FROM boss_aliases a
                     JOIN boss_list b ON a.boss_id = b.id
-                    WHERE a.keyword = %s  -- patched with .lower()
+                    WHERE a.keyword = %s
                 """, (keyword,))
                 row = cursor.fetchone()
                 if row:
@@ -206,11 +205,12 @@ def handle_message(event):
 
                 conn = get_db_connection()
                 cursor = conn.cursor()
+                keyword = keyword.lower()
                 cursor.execute("""
                     SELECT b.id, b.display_name, b.respawn_hours
                     FROM boss_aliases a
                     JOIN boss_list b ON a.boss_id = b.id
-                    WHERE a.keyword = %s  -- patched with .lower()
+                    WHERE a.keyword = %s
                 """, (keyword,))
                 row = cursor.fetchone()
                 if row:
@@ -237,11 +237,12 @@ def handle_message(event):
         keyword = text[2:].strip()
         conn = get_db_connection()
         cursor = conn.cursor()
+        keyword = keyword.lower()
         cursor.execute("""
             SELECT b.id, b.display_name, b.respawn_hours
             FROM boss_aliases a
             JOIN boss_list b ON a.boss_id = b.id
-            WHERE a.keyword = %s  -- patched with .lower()
+            WHERE a.keyword = %s
         """, (keyword,))
         row = cursor.fetchone()
         if row:
