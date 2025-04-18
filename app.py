@@ -268,18 +268,18 @@ def handle_message(event):
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT b.display_name, t.respawn_time, b.respawn_hours
+            SELECT b.display_name, t.latest_respawn_time, b.respawn_hours
             FROM boss_list b
             LEFT JOIN (
-                SELECT boss_id, MAX(respawn_time) AS respawn_time
+                SELECT DISTINCT ON (boss_id)
+                    boss_id, respawn_time AS latest_respawn_time
                 FROM boss_tasks
                 WHERE group_id = %s
-                GROUP BY boss_id
+                ORDER BY boss_id, respawn_time DESC
             ) t ON b.id = t.boss_id
-
             ORDER BY 
-                CASE WHEN t.respawn_time IS NULL THEN 1 ELSE 0 END, 
-                t.respawn_time ASC
+                CASE WHEN t.latest_respawn_time IS NULL THEN 1 ELSE 0 END, 
+                t.latest_respawn_time ASC
         """, (group_id,))
         results = cursor.fetchall()
         print(f"📊 查詢結果：{results}")
