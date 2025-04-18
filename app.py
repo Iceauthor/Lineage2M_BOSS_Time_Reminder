@@ -88,8 +88,8 @@ def auto_insert_boss_list():
 
         # 新增 boss 主資料
         cursor.execute("""
-            INSERT INTO boss_list (display_name, respawn_hours) 
-            VALUES (%s, %s) RETURNING id
+            INSERT INTO boss_list (...) VALUES (...) 
+            ON CONFLICT (display_name) DO UPDATE SET respawn_hours = EXCLUDED.respawn_hours
         """, (display_name, respawn_hours))
         boss_id = cursor.fetchone()[0]
 
