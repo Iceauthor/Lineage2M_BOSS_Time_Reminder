@@ -100,6 +100,7 @@ def auto_insert_boss_list():
             cursor.execute("""
                 INSERT INTO boss_aliases (boss_id, keyword)
                 VALUES (%s, %s)
+                ON CONFLICT DO NOTHING
             """, (boss_id, keyword.lower()))
 
     conn.commit()
@@ -185,7 +186,7 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 已清除本群組所有 BOSS 紀錄"))
         return
 
-# 處理 kr1、kr2 克4 170124 格式，指定前日或前兩日死亡時間
+    # 處理 kr1、kr2 克4 170124 格式，指定前日或前兩日死亡時間
     if text.lower().startswith("kr1 ") or text.lower().startswith("kr2 "):
         parts = text.split()
         if len(parts) == 3:
@@ -310,6 +311,7 @@ def handle_message(event):
 # 自動推播：重生時間倒數兩分鐘提醒
 def reminder_job():
     try:
+        tz = pytz.timezone("Asia/Taipei")
         now = datetime.now(tz)
         soon = now + timedelta(minutes=2)
         conn = get_db_connection()
