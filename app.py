@@ -159,7 +159,7 @@ def handle_message(event):
                     SELECT b.id, b.display_name, b.respawn_hours
                     FROM boss_aliases a
                     JOIN boss_list b ON a.boss_id = b.id
-                    WHERE a.keyword = %s
+                    WHERE a.keyword = %s  -- patched with .lower()
                 """, (keyword,))
                 row = cursor.fetchone()
                 if row:
@@ -210,7 +210,7 @@ def handle_message(event):
                     SELECT b.id, b.display_name, b.respawn_hours
                     FROM boss_aliases a
                     JOIN boss_list b ON a.boss_id = b.id
-                    WHERE a.keyword = %s
+                    WHERE a.keyword = %s  -- patched with .lower()
                 """, (keyword,))
                 row = cursor.fetchone()
                 if row:
@@ -241,7 +241,7 @@ def handle_message(event):
             SELECT b.id, b.display_name, b.respawn_hours
             FROM boss_aliases a
             JOIN boss_list b ON a.boss_id = b.id
-            WHERE a.keyword = %s
+            WHERE a.keyword = %s  -- patched with .lower()
         """, (keyword,))
         row = cursor.fetchone()
         if row:
