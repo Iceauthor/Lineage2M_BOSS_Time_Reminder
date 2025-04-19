@@ -294,9 +294,9 @@ def handle_message(event):
                     lines.append(f"{time.strftime('%H:%M:%S')} {name}\n")
                 elif now > time:
                     if hours:
-                        delta = now - time
-                        cycles = int(delta.total_seconds() // (hours * 3600)) + 1
-                        lines.append(f"{time.strftime('%H:%M:%S')} {name}【過{cycles}】\n")
+                        diff = (now - time).total_seconds()
+                        passed_cycles = int(diff // (hours * 3600))  # 向下取整，避免誤差提前進位
+                        lines.append(f"{time.strftime('%H:%M:%S')} {name}（過{passed_cycles}）\\n")
                     else:
                         lines.append(f"{time.strftime('%H:%M:%S')} {name}\n")
                 else:
