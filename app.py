@@ -278,14 +278,74 @@ def handle_message(event):
                 t.latest_respawn_time ASC
         """, (group_id,))
         results = cursor.fetchall()
-        print(f"📊 查詢結果：{results}")
+        # print(f"📊 查詢結果：{results}")
         cursor.close()
         conn.close()
 
         tz = pytz.timezone('Asia/Taipei')
         now = datetime.now(tz)
+        soon = now + timedelta(minutes=30)
         next_24hr = now + timedelta(hours=24)
-        lines = ["🕓 接下來 24 小時內重生 BOSS：\n"]
+        lines = ["🕓 即將重生 BOSS：\n"]
+
+        flex_contents = []
+        for name, time, hours in results:
+            if time:
+                time = time.replace(tzinfo=tz)
+                if now < time <= soon:
+                    color = "#D60000"  # 紅色
+                    emoji = "🔥 "
+                    note = "（快重生）"
+                    weight = "bold"
+                elif now > time:
+                    if hours:
+                        diff = (now - time).total_seconds()
+                        passed_cycles = int(diff // (hours * 3600))
+                        color = "#999999"  # 灰色
+                        emoji = ""
+                        note = f"（過{passed_cycles}）"
+                        weight = "regular"
+                    else:
+                        color = "#999999"
+                        emoji = ""
+                        note = ""
+                        weight = "regular"
+                else:
+                    color = "#000000"
+                    emoji = ""
+                    note = ""
+                    weight = "regular"
+
+                flex_contents.append({
+                    "type": "text",
+                    "text": f"{emoji}{time.strftime('%H:%M:%S')} {name}{note}",
+                    "color": color,
+                    "weight": weight,
+                    "size": "sm",
+                    "wrap": True
+                })
+            else:
+                flex_contents.append({
+                    "type": "text",
+                    "text": f"__:__:__ {name}",
+                    "color": "#CCCCCC",
+                    "size": "sm",
+                    "wrap": True
+                })
+
+        bubble = {
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {"type": "text", "text": "🕓 24小時內重生 BOSS", "weight": "bold", "size": "md", "margin": "md"},
+                    {"type": "separator", "margin": "md"},
+                    *flex_contents
+                ]
+            }
+        }
+        line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="BOSS 重生預測表", contents=bubble))
 
         for name, time, hours in results:
             if time:
@@ -296,7 +356,7 @@ def handle_message(event):
                     if hours:
                         diff = (now - time).total_seconds()
                         passed_cycles = int(diff // (hours * 3600))  # 向下取整，避免誤差提前進位
-                        lines.append(f"{time.strftime('%H:%M:%S')} {name}（過{passed_cycles}）\\n")
+                        lines.append(f"{time.strftime('%H:%M:%S')} {name}（過{passed_cycles}）\n")
                     else:
                         lines.append(f"{time.strftime('%H:%M:%S')} {name}\n")
                 else:
@@ -324,6 +384,9 @@ def reminder_job():
         """, (now, soon))
         results = cursor.fetchall()
         for name, group_id, respawn in results:
+            if not group_id or not group_id.startswith("C"):
+                print(f"⚠️ 無效 group_id：{group_id}，跳過")
+                continue
             try:
                 msg = f"*{name}* 即將出現"
                 line_bot_api.push_message(group_id, TextSendMessage(text=msg))
