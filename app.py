@@ -425,8 +425,6 @@ def handle_message(event):
                 ]
             }
         }
-        line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="BOSS 重生預測表", contents=bubble))
-
         for name, time, hours in results:
             if time:
                 time = time.replace(tzinfo=tz)
@@ -445,7 +443,13 @@ def handle_message(event):
                 lines.append(f"__:__:__ {name}\n")
 
         reply_text = ''.join(lines)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+        line_bot_api.reply_message(
+            event.reply_token,
+            messages=[
+                FlexSendMessage(alt_text="BOSS 重生預測表", contents=bubble),
+                TextSendMessage(text=reply_text)
+            ]
+        )
 
 
 # 自動推播：重生時間倒數兩分鐘提醒
