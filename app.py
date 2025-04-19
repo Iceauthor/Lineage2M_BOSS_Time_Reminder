@@ -282,13 +282,26 @@ def handle_message(event):
         cursor.close()
         conn.close()
 
+        flex_contents = []
+        yellow_list = [
+            "被汙染的克魯瑪", "司穆艾爾", "提米特利斯", "突變克魯瑪", "黑色蕾爾莉",
+            "寇倫", "提米妮爾", "卡坦", "蘭多勒", "貝希莫斯", "薩班", "史坦",
+            "忘卻之鏡", "大地祭壇", "水之祭壇", "風之祭壇", "黑闇祭壇", "克拉奇",
+            "梅杜莎", "沙勒卡", "塔拉金"
+        ]
+
+        purple_list = [
+            "黑卡頓", "塔那透斯", "巴倫", "摩德烏斯", "歐克斯", "薩拉克斯", "哈普", "霸拉克",
+            "安德拉斯", "納伊阿斯", "核心基座", "巨蟻女王", "卡布里歐", "鳳凰", "猛龍獸",
+            "奧爾芬", "弗林特", "拉何"
+        ]
+
         tz = pytz.timezone('Asia/Taipei')
         now = datetime.now(tz)
         soon = now + timedelta(minutes=30)
         next_24hr = now + timedelta(hours=24)
         lines = ["🕓 即將重生 BOSS：\n"]
 
-        flex_contents = []
         for name, time, hours in results:
             if time:
                 time = time.replace(tzinfo=tz)
@@ -297,41 +310,108 @@ def handle_message(event):
                     emoji = "🔥 "
                     note = "（快重生）"
                     weight = "bold"
+                    text_block = {
+                        "type": "text",
+                        "text": f"{emoji}{time.strftime('%H:%M:%S')} {name}{note}",
+                        "color": color,
+                        "weight": weight,
+                        "size": "sm",
+                        "wrap": True
+                    }
+                    box = {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [text_block]
+                    }
+                    if name in yellow_list:
+                        box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
+                    elif name in purple_list:
+                        box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
                 elif now > time:
                     if hours:
                         diff = (now - time).total_seconds()
                         passed_cycles = int(diff // (hours * 3600))
+                        if passed_cycles >= 1:
+                            note = f"（過{passed_cycles}）"
+                        else:
+                            note = ""
                         color = "#999999"  # 灰色
                         emoji = ""
-                        note = f"（過{passed_cycles}）"
                         weight = "regular"
+                        text_block = {
+                            "type": "text",
+                            "text": f"{emoji}{time.strftime('%H:%M:%S')} {name}{note}",
+                            "color": color,
+                            "weight": weight,
+                            "size": "sm",
+                            "wrap": True
+                        }
+                        box = {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [text_block]
+                        }
+                        if name in yellow_list:
+                            box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
+                        elif name in purple_list:
+                            box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
                     else:
                         color = "#999999"
                         emoji = ""
                         note = ""
                         weight = "regular"
+                        text_block = {
+                            "type": "text",
+                            "text": f"{emoji}{time.strftime('%H:%M:%S')} {name}{note}",
+                            "color": color,
+                            "weight": weight,
+                            "size": "sm",
+                            "wrap": True
+                        }
+                        box = {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [text_block]
+                        }
+                        if name in yellow_list:
+                            box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
+                        elif name in purple_list:
+                            box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
                 else:
                     color = "#000000"
                     emoji = ""
                     note = ""
                     weight = "regular"
-
-                flex_contents.append({
-                    "type": "text",
-                    "text": f"{emoji}{time.strftime('%H:%M:%S')} {name}{note}",
-                    "color": color,
-                    "weight": weight,
-                    "size": "sm",
-                    "wrap": True
-                })
+                    text_block = {
+                        "type": "text",
+                        "text": f"__:__:__ {name}",
+                        "color": "#CCCCCC",
+                        "size": "sm",
+                        "wrap": True
+                    }
+                    box = {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [text_block]
+                    }
+                    if name in yellow_list:
+                        box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
+                    elif name in purple_list:
+                        box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
             else:
-                flex_contents.append({
+                text_block = {
                     "type": "text",
                     "text": f"__:__:__ {name}",
                     "color": "#CCCCCC",
                     "size": "sm",
                     "wrap": True
-                })
+                }
+                box = {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [text_block]
+                }
+                flex_contents.append(box)
 
         bubble = {
             "type": "bubble",
@@ -339,7 +419,7 @@ def handle_message(event):
                 "type": "box",
                 "layout": "vertical",
                 "contents": [
-                    {"type": "text", "text": "🕓 24小時內重生 BOSS", "weight": "bold", "size": "md", "margin": "md"},
+                    {"type": "text", "text": "🕓 即將重生 BOSS", "weight": "bold", "size": "md", "margin": "md"},
                     {"type": "separator", "margin": "md"},
                     *flex_contents
                 ]
