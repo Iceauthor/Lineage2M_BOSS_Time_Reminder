@@ -302,17 +302,17 @@ def handle_message(event):
         next_24hr = now + timedelta(hours=24)
         lines = ["🕓 即將重生 BOSS：\n"]
 
-        for name, time, hours in results:
-            if time:
-                time = time.replace(tzinfo=tz)
-                if now < time <= soon:
+        for name, respawn_time, hours in results:
+            if respawn_time:
+                respawn_time = respawn_time.replace(tzinfo=tz) + timedelta(hours=hours)
+                if now < respawn_time <= soon:
                     color = "#D60000"  # 紅色
                     emoji = "🔥 "
                     note = "（快重生）"
                     weight = "bold"
                     text_block = {
                         "type": "text",
-                        "text": f"{emoji}{time.strftime('%H:%M:%S')} {name}{note}",
+                        "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
                         "color": color,
                         "weight": weight,
                         "size": "sm",
@@ -328,9 +328,9 @@ def handle_message(event):
                     elif name in purple_list:
                         box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
                     flex_contents.append(box)
-                elif now > time:
+                elif now > respawn_time:
                     if hours:
-                        diff = (now - time).total_seconds()
+                        diff = (now - respawn_time).total_seconds()
                         passed_cycles = int(diff // (hours * 3600))
                         if passed_cycles >= 1:
                             note = f"（過{passed_cycles}）"
@@ -341,7 +341,7 @@ def handle_message(event):
                         weight = "regular"
                         text_block = {
                             "type": "text",
-                            "text": f"{emoji}{time.strftime('%H:%M:%S')} {name}{note}",
+                            "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
                             "color": color,
                             "weight": weight,
                             "size": "sm",
@@ -364,7 +364,7 @@ def handle_message(event):
                         weight = "regular"
                         text_block = {
                             "type": "text",
-                            "text": f"{emoji}{time.strftime('%H:%M:%S')} {name}{note}",
+                            "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
                             "color": color,
                             "weight": weight,
                             "size": "sm",
@@ -429,20 +429,20 @@ def handle_message(event):
                 ]
             }
         }
-        for name, time, hours in results:
-            if time:
-                time = time.replace(tzinfo=tz)
-                if now <= time <= next_24hr:
-                    lines.append(f"{time.strftime('%H:%M:%S')} {name}\n")
-                elif now > time:
+        for name, respawn_time, hours in results:
+            if respawn_time:
+                respawn_time = respawn_time.replace(tzinfo=tz)
+                if now <= respawn_time <= next_24hr:
+                    lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}\n")
+                elif now > respawn_time:
                     if hours:
-                        diff = (now - time).total_seconds()
+                        diff = (now - respawn_time).total_seconds()
                         passed_cycles = int(diff // (hours * 3600))  # 向下取整，避免誤差提前進位
-                        lines.append(f"{time.strftime('%H:%M:%S')} {name}（過{passed_cycles}）\n")
+                        lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}（過{passed_cycles}）\n")
                     else:
-                        lines.append(f"{time.strftime('%H:%M:%S')} {name}\n")
+                        lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}\n")
                 else:
-                    lines.append(f"{time.strftime('%H:%M:%S')} {name}\n")
+                    lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}\n")
             else:
                 lines.append(f"__:__:__ {name}\n")
 
