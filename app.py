@@ -175,8 +175,8 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
-    # 處理 /clear all 指令：清除該群組所有 BOSS 紀錄
-    if text.lower().strip() == "/clear all":
+    # 處理 clear all 指令：清除該群組所有 BOSS 紀錄
+    if text.lower().strip() == "clear all":
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("DELETE FROM boss_tasks WHERE group_id = %s", (group_id,))
@@ -454,34 +454,123 @@ def handle_message(event):
                 # TextSendMessage(text=reply_text)
             ]
         )
-    if text.startswith("/alias ") or text.startswith("/add "):
+    # ✅ ALIAS 指令管理區段
+    if text.startswith("alias ") or text.startswith("add "):
         parts = text.split()
-        if len(parts) < 3:
+        if len(parts) < 2:
             line_bot_api.reply_message(event.reply_token,
-                                       TextSendMessage(text="⚠️ 格式錯誤，請使用：/alias 別名 正式名稱"))
+                                       TextSendMessage(text="⚠️ 格式錯誤，請使用：alias 別名 正式名稱"))
             return
 
-        keyword = parts[1].lower()
-        target_name = parts[2]
+        subcommand = parts[1].lower()
 
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM boss_list WHERE display_name = %s", (target_name,))
-        row = cursor.fetchone()
-        if row:
-            boss_id = row[0]
-            cursor.execute(
-                "INSERT INTO boss_aliases (boss_id, keyword) VALUES (%s, %s) ON CONFLICT DO NOTHING",
-                (boss_id, keyword)
-            )
+        # alias del keyword
+        if subcommand == "del" and len(parts) == 3:
+            keyword = parts[2].lower()
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM boss_aliases WHERE keyword = %s", (keyword,))
             conn.commit()
-            reply_text = f"✅ 已將「{keyword}」設定為「{target_name}」的別名！"
-        else:
-            reply_text = f"❌ 找不到名稱為「{target_name}」的 BOSS。"
-        cursor.close()
-        conn.close()
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-        return
+            cursor.close()
+            conn.close()
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🗑️ 已刪除別名「{keyword}」"))
+            return
+
+        # alias check keyword
+        if subcommand == "check" and len(parts) == 3:
+            keyword = parts[2].lower()
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT b.display_name FROM boss_aliases a
+                JOIN boss_list b ON a.boss_id = b.id
+                WHERE a.keyword = %s
+            """, (keyword,))
+            row = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            if row:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🔍 「{keyword}」 對應 BOSS：{row[0]}"))
+            else:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"❌ 找不到「{keyword}」的對應 BOSS"))
+            return
+
+        # ✅ alias list（只顯示本群使用過的 BOSS）
+        if subcommand == "list":
+            group_id = event.source.group_id if event.source.type == "group" else "single"
+            if group_id == "single":
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 此功能僅限群組使用"))
+                return
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT DISTINCT a.keyword, b.display_name
+                FROM boss_aliases a
+                JOIN boss_list b ON a.boss_id = b.id
+                JOIN boss_tasks t ON b.id = t.boss_id
+                WHERE t.group_id = %s
+                ORDER BY b.display_name
+            """, (group_id,))
+            rows = cursor.fetchall()
+            cursor.close()
+            conn.close()
+
+            if not rows:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📭 本群組尚未使用過任何別名。"))
+                return
+
+            # 建立 Flex Message 卡片內容
+            alias_contents = [
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                        {"type": "text", "text": k, "size": "sm", "flex": 2, "weight": "bold"},
+                        {"type": "text", "text": "→", "size": "sm", "flex": 1},
+                        {"type": "text", "text": n, "size": "sm", "flex": 5}
+                    ]
+                } for k, n in rows
+            ]
+
+            bubble = {
+                "type": "bubble",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {"type": "text", "text": "📘 本群組別名清單", "weight": "bold", "size": "md", "margin": "md"},
+                        {"type": "separator", "margin": "md"},
+                        *alias_contents
+                    ]
+                }
+            }
+
+            line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="本群別名清單", contents=bubble))
+            return
+
+        # alias 新增 keyword → display_name
+        if len(parts) >= 3:
+            keyword = parts[1].lower()
+            target_name = parts[2]
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM boss_list WHERE display_name = %s", (target_name,))
+            row = cursor.fetchone()
+            if row:
+                boss_id = row[0]
+                cursor.execute(
+                    "INSERT INTO boss_aliases (boss_id, keyword) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                    (boss_id, keyword)
+                )
+                conn.commit()
+                reply_text = f"✅ 已將「{keyword}」設定為「{target_name}」的別名！"
+            else:
+                reply_text = f"❌ 找不到名稱為「{target_name}」的 BOSS。"
+            cursor.close()
+            conn.close()
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+            return
 
 
 # 自動推播：重生時間倒數兩分鐘提醒
