@@ -454,6 +454,34 @@ def handle_message(event):
                 # TextSendMessage(text=reply_text)
             ]
         )
+    if text.startswith("/alias ") or text.startswith("/add "):
+        parts = text.split()
+        if len(parts) < 3:
+            line_bot_api.reply_message(event.reply_token,
+                                       TextSendMessage(text="⚠️ 格式錯誤，請使用：/alias 別名 正式名稱"))
+            return
+
+        keyword = parts[1].lower()
+        target_name = parts[2]
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM boss_list WHERE display_name = %s", (target_name,))
+        row = cursor.fetchone()
+        if row:
+            boss_id = row[0]
+            cursor.execute(
+                "INSERT INTO boss_aliases (boss_id, keyword) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                (boss_id, keyword)
+            )
+            conn.commit()
+            reply_text = f"✅ 已將「{keyword}」設定為「{target_name}」的別名！"
+        else:
+            reply_text = f"❌ 找不到名稱為「{target_name}」的 BOSS。"
+        cursor.close()
+        conn.close()
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+        return
 
 
 # 自動推播：重生時間倒數兩分鐘提醒
