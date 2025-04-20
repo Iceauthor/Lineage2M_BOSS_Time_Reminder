@@ -327,6 +327,7 @@ def handle_message(event):
                         box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
                     elif name in purple_list:
                         box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
+                    flex_contents.append(box)
                 elif now > time:
                     if hours:
                         diff = (now - time).total_seconds()
@@ -355,6 +356,7 @@ def handle_message(event):
                             box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
                         elif name in purple_list:
                             box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
+                        flex_contents.append(box)
                     else:
                         color = "#999999"
                         emoji = ""
@@ -377,6 +379,7 @@ def handle_message(event):
                             box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
                         elif name in purple_list:
                             box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
+                        flex_contents.append(box)
                 else:
                     color = "#000000"
                     emoji = ""
@@ -398,6 +401,7 @@ def handle_message(event):
                         box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
                     elif name in purple_list:
                         box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
+                    flex_contents.append(box)
             else:
                 text_block = {
                     "type": "text",
@@ -446,8 +450,8 @@ def handle_message(event):
         line_bot_api.reply_message(
             event.reply_token,
             messages=[
-                FlexSendMessage(alt_text="BOSS 重生預測表", contents=bubble),
-                TextSendMessage(text=reply_text)
+                FlexSendMessage(alt_text="BOSS 重生預測表", contents=bubble)
+                # TextSendMessage(text=reply_text)
             ]
         )
 
