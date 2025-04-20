@@ -264,18 +264,13 @@ def handle_message(event):
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT b.display_name, t.latest_respawn_time, b.respawn_hours
+            SELECT b.display_name, MAX(t.kill_time) AS latest_kill_time, b.respawn_hours
             FROM boss_list b
-            LEFT JOIN (
-                SELECT DISTINCT ON (boss_id)
-                    boss_id, respawn_time AS latest_respawn_time
-                FROM boss_tasks
-                WHERE group_id = %s
-                ORDER BY boss_id, respawn_time DESC
-            ) t ON b.id = t.boss_id
+            LEFT JOIN boss_tasks t ON b.id = t.boss_id AND t.group_id = %s
+            GROUP BY b.display_name, b.respawn_hours
             ORDER BY 
-                CASE WHEN t.latest_respawn_time IS NULL THEN 1 ELSE 0 END, 
-                t.latest_respawn_time ASC
+                CASE WHEN MAX(t.kill_time) IS NULL THEN 1 ELSE 0 END,
+                MAX(t.kill_time)
         """, (group_id,))
         results = cursor.fetchall()
         # print(f"📊 查詢結果：{results}")
@@ -302,17 +297,17 @@ def handle_message(event):
         next_24hr = now + timedelta(hours=24)
         lines = ["🕓 即將重生 BOSS：\n"]
 
-        for name, respawn_time, hours in results:
-            if respawn_time:
-                respawn_time = respawn_time.replace(tzinfo=tz) + timedelta(hours=hours)
-                if now < respawn_time <= soon:
+        for name, kill_time, hours in results:
+            if kill_time:
+                kill_time = kill_time.replace(tzinfo=tz) + timedelta(hours=hours)
+                if now < kill_time <= soon:
                     color = "#D60000"  # 紅色
                     emoji = "🔥 "
                     note = "（快重生）"
                     weight = "bold"
                     text_block = {
                         "type": "text",
-                        "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
+                        "text": f"{emoji}{kill_time.strftime('%H:%M:%S')} {name}{note}",
                         "color": color,
                         "weight": weight,
                         "size": "sm",
@@ -328,9 +323,9 @@ def handle_message(event):
                     elif name in purple_list:
                         box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
                     flex_contents.append(box)
-                elif now > respawn_time:
+                elif now > kill_time:
                     if hours:
-                        diff = (now - respawn_time).total_seconds()
+                        diff = (now - kill_time).total_seconds()
                         passed_cycles = int(diff // (hours * 3600))
                         if passed_cycles >= 1:
                             note = f"（過{passed_cycles}）"
@@ -341,7 +336,7 @@ def handle_message(event):
                         weight = "regular"
                         text_block = {
                             "type": "text",
-                            "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
+                            "text": f"{emoji}{kill_time.strftime('%H:%M:%S')} {name}{note}",
                             "color": color,
                             "weight": weight,
                             "size": "sm",
@@ -364,7 +359,7 @@ def handle_message(event):
                         weight = "regular"
                         text_block = {
                             "type": "text",
-                            "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
+                            "text": f"{emoji}{kill_time.strftime('%H:%M:%S')} {name}{note}",
                             "color": color,
                             "weight": weight,
                             "size": "sm",
@@ -429,9 +424,9 @@ def handle_message(event):
                 ]
             }
         }
-        for name, respawn_time, hours in results:
-            if respawn_time:
-                respawn_time = respawn_time.replace(tzinfo=tz)
+        for name, kill_time, hours in results:
+            if kill_time:
+                respawn_time = kill_time.replace(tzinfo=tz) + timedelta(hours=hours)
                 if now <= respawn_time <= next_24hr:
                     lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}\n")
                 elif now > respawn_time:
