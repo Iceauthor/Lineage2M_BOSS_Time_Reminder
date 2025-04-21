@@ -278,6 +278,9 @@ def handle_message(event):
                 ORDER BY kill_time DESC
                 LIMIT 1
             ) t ON true
+            ORDER BY 
+              CASE WHEN t.kill_time IS NULL THEN 1 ELSE 0 END,
+              (t.kill_time + (b.respawn_hours || ' hours')::interval)
         """, (group_id,))
         results = cursor.fetchall()
         cursor.close()
