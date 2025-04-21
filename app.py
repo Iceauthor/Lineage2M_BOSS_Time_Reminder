@@ -270,7 +270,7 @@ def handle_message(event):
             GROUP BY b.display_name, b.respawn_hours
             ORDER BY 
                 CASE WHEN MAX(t.kill_time) IS NULL THEN 1 ELSE 0 END,
-                MAX(t.kill_time) DESC
+                MAX(t.kill_time)
         """, (group_id,))
         results = cursor.fetchall()
         # print(f"📊 查詢結果：{results}")
@@ -291,15 +291,16 @@ def handle_message(event):
             "奧爾芬", "弗林特", "拉何"
         ]
 
-        tz = pytz.timezone('Asia/Taipei')
-        now = datetime.now(tz)
+        now = datetime.now(pytz.timezone('Asia/Taipei'))
+        # respawn_time = now + timedelta(hours=respawn_hours)
         soon = now + timedelta(minutes=30)
         next_24hr = now + timedelta(hours=24)
         lines = ["🕓 即將重生 BOSS：\n"]
 
-        for name, kill_time, hours in results:
+        for name, kill_time, respawn_hours in results:
             if kill_time:
-                respawn_time = kill_time.replace(tzinfo=tz) + timedelta(hours=hours)
+                respawn_time = now + timedelta(hours=respawn_hours)
+                # respawn_time = kill_time.replace(tzinfo=tz) + timedelta(hours=hours)
                 if now < respawn_time <= soon:
                     color = "#D60000"  # 紅色
                     emoji = "🔥 "
@@ -324,9 +325,9 @@ def handle_message(event):
                         box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
                     flex_contents.append(box)
                 elif now > respawn_time:
-                    if hours:
+                    if respawn_hours:
                         diff = (now - respawn_time).total_seconds()
-                        passed_cycles = int(diff // (hours * 3600))
+                        passed_cycles = int(diff // (respawn_hours * 3600))
                         if passed_cycles >= 1:
                             note = f"（過{passed_cycles}）"
                         else:
