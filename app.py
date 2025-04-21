@@ -275,7 +275,7 @@ def handle_message(event):
             ) t ON true
         """, (group_id,))
         results = cursor.fetchall()
-        print(f"📊 查詢結果：{results}")
+        # print(f"📊 查詢結果：{results}")
         cursor.close()
         conn.close()
 
