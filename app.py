@@ -264,13 +264,15 @@ def handle_message(event):
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT b.display_name, MAX(t.kill_time) AS latest_kill_time, b.respawn_hours
+            SELECT b.display_name, t.kill_time, b.respawn_hours
             FROM boss_list b
-            LEFT JOIN boss_tasks t ON b.id = t.boss_id AND t.group_id = %s
-            GROUP BY b.display_name, b.respawn_hours
-            ORDER BY 
-                CASE WHEN MAX(t.kill_time) IS NULL THEN 1 ELSE 0 END,
-                MAX(t.kill_time)
+            LEFT JOIN LATERAL (
+                SELECT kill_time
+                FROM boss_tasks
+                WHERE boss_id = b.id AND group_id = %s
+                ORDER BY kill_time DESC
+                LIMIT 1
+            ) t ON true
         """, (group_id,))
         results = cursor.fetchall()
         # print(f"📊 查詢結果：{results}")
