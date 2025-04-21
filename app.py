@@ -275,7 +275,7 @@ def handle_message(event):
                 SELECT id, kill_time
                 FROM boss_tasks
                 WHERE boss_id = b.id AND group_id = %s
-                ORDER BY kill_time DESC
+                ORDER BY kill_time DESC, id DESC
                 LIMIT 1
             ) t ON true
             ORDER BY 
