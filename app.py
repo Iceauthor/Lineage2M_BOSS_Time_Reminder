@@ -299,8 +299,7 @@ def handle_message(event):
 
         for name, kill_time, respawn_hours in results:
             if kill_time:
-                respawn_time = now + timedelta(hours=respawn_hours)
-                # respawn_time = kill_time.replace(tzinfo=tz) + timedelta(hours=hours)
+                respawn_time = kill_time.replace(tzinfo=pytz.timezone('Asia/Taipei')) + timedelta(hours=respawn_hours)
                 if now < respawn_time <= soon:
                     color = "#D60000"  # 紅色
                     emoji = "🔥 "
@@ -427,8 +426,7 @@ def handle_message(event):
         }
         for name, kill_time, respawn_hours in results:
             if kill_time:
-                respawn_time = now + timedelta(hours=respawn_hours)
-                # respawn_time = kill_time.replace(tzinfo=tz) + timedelta(hours=hours)
+                respawn_time = kill_time.replace(tzinfo=pytz.timezone('Asia/Taipei')) + timedelta(hours=respawn_hours)
                 if now <= respawn_time <= next_24hr:
                     lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}\n")
                 elif now > respawn_time:
