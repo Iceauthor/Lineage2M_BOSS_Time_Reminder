@@ -286,6 +286,9 @@ def handle_message(event):
         tz = pytz.timezone('Asia/Taipei')
         now = datetime.now(tz)
         soon = now + timedelta(minutes=30)
+        next_24hr = now + timedelta(hours=24)
+
+        lines = ["🕓 即將重生 BOSS：\n"]
 
         yellow_list = [
             "被汙染的克魯瑪", "司穆艾爾", "提米特利斯", "突變克魯瑪", "黑色蕾爾莉",
