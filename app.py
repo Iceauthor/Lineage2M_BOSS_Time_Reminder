@@ -245,11 +245,17 @@ def handle_message(event):
             boss_id, display_name, respawn_hours = row
             now = datetime.now(pytz.timezone('Asia/Taipei'))
             respawn_time = now + timedelta(hours=respawn_hours)
+
+            # 先刪除同一群組同一 BOSS 的舊資料
+            cursor.execute("DELETE FROM boss_tasks WHERE boss_id = %s AND group_id = %s", (boss_id, group_id))
+
+            # 插入新紀錄
             cursor.execute(
                 "INSERT INTO boss_tasks (boss_id, group_id, kill_time, respawn_time) VALUES (%s, %s, %s, %s)",
                 (boss_id, group_id, now, respawn_time)
             )
             conn.commit()
+
             reply_text = f"\n\n🔴 擊殺：{display_name}\n🕓 死亡：{now.strftime('%Y-%m-%d %H:%M:%S')}\n🟢 重生：{respawn_time.strftime('%Y-%m-%d %H:%M:%S')}"
         else:
             reply_text = "❌ 無法辨識的關鍵字，請先使用 add 指令新增。"
