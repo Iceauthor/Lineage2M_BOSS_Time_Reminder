@@ -544,7 +544,7 @@ def handle_message(event):
     #             ]
     #         }
     #     }
-        for name, kill_time, respawn_hours in results:
+        for name, task_id, kill_time, respawn_hours in results:
             if kill_time:
                 respawn_time = kill_time.replace(tzinfo=pytz.timezone('Asia/Taipei')) + timedelta(hours=respawn_hours)
                 if now <= respawn_time <= next_24hr:
