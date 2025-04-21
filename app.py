@@ -275,7 +275,7 @@ def handle_message(event):
             ) t ON true
         """, (group_id,))
         results = cursor.fetchall()
-        # print(f"📊 查詢結果：{results}")
+        print(f"📊 查詢結果：{results}")
         cursor.close()
         conn.close()
 
@@ -294,7 +294,6 @@ def handle_message(event):
         ]
 
         now = datetime.now(pytz.timezone('Asia/Taipei'))
-        # respawn_time = now + timedelta(hours=respawn_hours)
         soon = now + timedelta(minutes=30)
         next_24hr = now + timedelta(hours=24)
         lines = ["🕓 即將重生 BOSS：\n"]
