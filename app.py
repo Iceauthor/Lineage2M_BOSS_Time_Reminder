@@ -270,7 +270,7 @@ def handle_message(event):
             GROUP BY b.display_name, b.respawn_hours
             ORDER BY 
                 CASE WHEN MAX(t.kill_time) IS NULL THEN 1 ELSE 0 END,
-                MAX(t.kill_time)
+                MAX(t.kill_time) DESC
         """, (group_id,))
         results = cursor.fetchall()
         # print(f"📊 查詢結果：{results}")
