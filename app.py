@@ -299,15 +299,15 @@ def handle_message(event):
 
         for name, kill_time, hours in results:
             if kill_time:
-                kill_time = kill_time.replace(tzinfo=tz) + timedelta(hours=hours)
-                if now < kill_time <= soon:
+                respawn_time = kill_time.replace(tzinfo=tz) + timedelta(hours=hours)
+                if now < respawn_time <= soon:
                     color = "#D60000"  # 紅色
                     emoji = "🔥 "
                     note = "（快重生）"
                     weight = "bold"
                     text_block = {
                         "type": "text",
-                        "text": f"{emoji}{kill_time.strftime('%H:%M:%S')} {name}{note}",
+                        "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
                         "color": color,
                         "weight": weight,
                         "size": "sm",
@@ -323,9 +323,9 @@ def handle_message(event):
                     elif name in purple_list:
                         box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
                     flex_contents.append(box)
-                elif now > kill_time:
+                elif now > respawn_time:
                     if hours:
-                        diff = (now - kill_time).total_seconds()
+                        diff = (now - respawn_time).total_seconds()
                         passed_cycles = int(diff // (hours * 3600))
                         if passed_cycles >= 1:
                             note = f"（過{passed_cycles}）"
@@ -336,7 +336,7 @@ def handle_message(event):
                         weight = "regular"
                         text_block = {
                             "type": "text",
-                            "text": f"{emoji}{kill_time.strftime('%H:%M:%S')} {name}{note}",
+                            "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
                             "color": color,
                             "weight": weight,
                             "size": "sm",
@@ -359,7 +359,7 @@ def handle_message(event):
                         weight = "regular"
                         text_block = {
                             "type": "text",
-                            "text": f"{emoji}{kill_time.strftime('%H:%M:%S')} {name}{note}",
+                            "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
                             "color": color,
                             "weight": weight,
                             "size": "sm",
