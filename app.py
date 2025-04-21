@@ -160,6 +160,8 @@ def handle_message(event):
                 if row:
                     boss_id, display_name, respawn_hours = row
                     respawn_time = kill_time + timedelta(hours=respawn_hours)
+                    # 先刪除同一群組同一 BOSS 的舊資料
+                    cursor.execute("DELETE FROM boss_tasks WHERE boss_id = %s AND group_id = %s", (boss_id, group_id))
                     cursor.execute(
                         "INSERT INTO boss_tasks (boss_id, group_id, kill_time, respawn_time) VALUES (%s, %s, %s, %s)",
                         (boss_id, group_id, kill_time, respawn_time)
@@ -212,6 +214,8 @@ def handle_message(event):
                 if row:
                     boss_id, display_name, respawn_hours = row
                     respawn_time = kill_time + timedelta(hours=respawn_hours)
+                    # 先刪除同一群組同一 BOSS 的舊資料
+                    cursor.execute("DELETE FROM boss_tasks WHERE boss_id = %s AND group_id = %s", (boss_id, group_id))
                     cursor.execute(
                         "INSERT INTO boss_tasks (boss_id, group_id, kill_time, respawn_time) VALUES (%s, %s, %s, %s)",
                         (boss_id, group_id, kill_time, respawn_time)
@@ -245,7 +249,6 @@ def handle_message(event):
             boss_id, display_name, respawn_hours = row
             now = datetime.now(pytz.timezone('Asia/Taipei'))
             respawn_time = now + timedelta(hours=respawn_hours)
-
             # 先刪除同一群組同一 BOSS 的舊資料
             cursor.execute("DELETE FROM boss_tasks WHERE boss_id = %s AND group_id = %s", (boss_id, group_id))
 
