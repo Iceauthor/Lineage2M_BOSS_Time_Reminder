@@ -425,15 +425,16 @@ def handle_message(event):
                 ]
             }
         }
-        for name, kill_time, hours in results:
+        for name, kill_time, respawn_hours in results:
             if kill_time:
-                respawn_time = kill_time.replace(tzinfo=tz) + timedelta(hours=hours)
+                respawn_time = now + timedelta(hours=respawn_hours)
+                # respawn_time = kill_time.replace(tzinfo=tz) + timedelta(hours=hours)
                 if now <= respawn_time <= next_24hr:
                     lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}\n")
                 elif now > respawn_time:
-                    if hours:
+                    if respawn_hours:
                         diff = (now - respawn_time).total_seconds()
-                        passed_cycles = int(diff // (hours * 3600))  # 向下取整，避免誤差提前進位
+                        passed_cycles = int(diff // (respawn_hours * 3600))  # 向下取整，避免誤差提前進位
                         lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}（過{passed_cycles}）\n")
                     else:
                         lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}\n")
