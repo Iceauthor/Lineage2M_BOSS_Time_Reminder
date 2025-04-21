@@ -308,7 +308,9 @@ def handle_message(event):
 
         flex_contents = []
 
-        for name, task_id, kill_time, hours in results:
+        sorted_results = sorted(results, key=lambda r: (r[2] + timedelta(hours=r[3])) if r[2] else datetime.max)
+        for name, task_id, kill_time, hours in sorted_results:
+
             box = {
                 "type": "box",
                 "layout": "vertical",
@@ -319,12 +321,30 @@ def handle_message(event):
 
             # 判斷有無紀錄
             if kill_time:
-                respawn_time = kill_time.replace(tzinfo=tz) + timedelta(hours=hours)
+                respawn_time = kill_time.astimezone(tz) + timedelta(hours=hours)
                 if now < respawn_time <= soon:
                     color = "#D60000"
                     note = "（快重生）"
                     emoji = "🔥 "
                     weight = "bold"
+                    text_block = {
+                        "type": "text",
+                        "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
+                        "color": color,
+                        "weight": weight,
+                        "size": "sm",
+                        "wrap": True
+                    }
+                    box = {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [text_block]
+                    }
+                    if name in yellow_list:
+                        box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
+                    elif name in purple_list:
+                        box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
+                    flex_contents.append(box)
                 elif now > respawn_time:
                     diff = (now - respawn_time).total_seconds()
                     passed = int(diff // (hours * 3600))
@@ -332,36 +352,62 @@ def handle_message(event):
                     color = "#999999"
                     emoji = ""
                     weight = "regular"
+                    text_block = {
+                        "type": "text",
+                        "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
+                        "color": color,
+                        "weight": weight,
+                        "size": "sm",
+                        "wrap": True
+                    }
+                    box = {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [text_block]
+                    }
+                    if name in yellow_list:
+                        box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
+                    elif name in purple_list:
+                        box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
+                    flex_contents.append(box)
                 else:
                     color = "#000000"
                     note = ""
                     emoji = ""
                     weight = "regular"
+                    text_block = {
+                        "type": "text",
+                        "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
+                        "color": color,
+                        "weight": weight,
+                        "size": "sm",
+                        "wrap": True
+                    }
+                    box = {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [text_block]
+                    }
+                    if name in yellow_list:
+                        box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
+                    elif name in purple_list:
+                        box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
+                    flex_contents.append(box)
                 time_str = respawn_time.strftime("%H:%M:%S")
             else:
-                color = "#CCCCCC"
-                note = ""
-                emoji = ""
-                weight = "regular"
-                time_str = "__:__:__"
-
-            text_block = {
-                "type": "text",
-                "text": f"{emoji}{time_str} {name}{note}",
-                "color": color,
-                "weight": weight,
-                "size": "sm",
-                "wrap": True
-            }
-            box["contents"].append(text_block)
-
-            # 設定底色
-            if name in yellow_list:
-                box["backgroundColor"] = "#FFF9DC"
-            elif name in purple_list:
-                box["backgroundColor"] = "#F5F0FF"
-
-            flex_contents.append(box)
+                text_block = {
+                    "type": "text",
+                    "text": f"__:__:__ {name}",
+                    "color": "#CCCCCC",
+                    "size": "sm",
+                    "wrap": True
+                }
+                box = {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [text_block]
+                }
+                flex_contents.append(box)
 
         bubble = {
             "type": "bubble",
