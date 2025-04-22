@@ -133,15 +133,14 @@ def callback():
     except InvalidSignatureError:
         abort(400)
         # ✅ 無論有沒有成功處理，都立即告訴 LINE 一切 OK
-    return 'OK'
-    # return 'OK', 200
+    return 'OK', 200
 
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     text = event.message.text.strip()
     group_id = event.source.group_id if event.source.type == "group" else "single"
-    threading.Thread(target=process_event, args=(event,)).start()
+    # threading.Thread(target=process_event, args=(event,)).start()
     # 處理 K 克4 170124（當日指定時間）
     if text.lower().startswith("k "):
         parts = text.split()
@@ -277,6 +276,12 @@ def handle_message(event):
     text = event.message.text.strip().lower()
     group_id = event.source.group_id if event.source.type == "group" else "single"
     if text in ["kb all", "出"]:
+        # ✅ 立即快速回應，避免 reply_token 過期
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⏳ 查詢中，稍後回覆結果"))
+        # ✅ 背景處理查詢與 push message
+        # if group_id:
+        #     threading.Thread(target=process_kb_all, args=(group_id,)).start()
+
         conn = get_db_connection()
         cursor = conn.cursor()
 
