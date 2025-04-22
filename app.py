@@ -133,7 +133,8 @@ def callback():
     except InvalidSignatureError:
         abort(400)
         # ✅ 無論有沒有成功處理，都立即告訴 LINE 一切 OK
-    return 'OK', 200
+    return 'OK'
+    # return 'OK', 200
 
 
 @handler.add(MessageEvent, message=TextMessage)
