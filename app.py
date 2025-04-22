@@ -124,17 +124,20 @@ def callback():
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
     try:
-        handler.handle(body, signature)
+        # ✅ 這行會觸發 handler 處理 event，但我們用 Thread 包住
+        threading.Thread(target=handler.handle, args=(body, signature)).start()
     except InvalidSignatureError:
         abort(400)
-    return 'OK'
+
+        # ✅ 無論有沒有成功處理，都立即告訴 LINE 一切 OK
+    return 'OK', 200
 
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     text = event.message.text.strip()
     group_id = event.source.group_id if event.source.type == "group" else "single"
-    
+    threading.Thread(target=process_event, args=(event,)).start()
     # 處理 K 克4 170124（當日指定時間）
     if text.lower().startswith("k "):
         parts = text.split()
@@ -748,6 +751,36 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
+def process_event(event):
+    text = event.message.text.strip().lower()
+
+    if text == "ping":
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="✅ Bot 已啟動！")
+        )
+    elif text == "flex測試":
+        bubble = {
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {"type": "text", "text": "測試 Flex", "weight": "bold", "size": "lg"},
+                    {"type": "separator", "margin": "md"},
+                    {"type": "text", "text": "這是一個 Flex Message 測試喔！", "margin": "md"}
+                ]
+            }
+        }
+        line_bot_api.reply_message(
+            event.reply_token,
+            FlexSendMessage(alt_text="Flex 測試訊息", contents=bubble)
+        )
+    else:
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=f"你說的是：{text}")
+        )
 
 # 自動推播：重生時間倒數兩分鐘提醒
 def reminder_job():
@@ -812,5 +845,5 @@ if __name__ == "__main__":
     scheduler = BackgroundScheduler()
     scheduler.add_job(reminder_job, "interval", minutes=1)
     scheduler.start()
-    app.run(port=5000)
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
     
