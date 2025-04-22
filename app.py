@@ -784,10 +784,12 @@ def process_kb_all(group_id):
             else:
                 lines.append(f"__:__:__ {name}\n")
 
-    line_bot_api.push_message(
-        group_id,
-        FlexSendMessage(alt_text="BOSS 重生預測表", contents=bubble)
-    )
+        line_bot_api.push_message(
+            group_id,
+            FlexSendMessage(alt_text="BOSS 重生預測表", contents=bubble)
+        )
+    except Exception as e:
+        print("❌ 排程提醒錯誤：", e)
 
 def process_event(event):
     text = event.message.text.strip().lower()
