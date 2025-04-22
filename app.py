@@ -9,6 +9,8 @@ from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, FlexSendMessage
 from datetime import datetime, timedelta
 import pytz
+import threading
+
 
 
 load_dotenv()
