@@ -40,30 +40,29 @@ def get_respawn_hours_by_name(name):
 # 自動清理重複 boss_aliases 並建立唯一索引
 def cleanup_boss_aliases():
     try:
-        def cleanup_boss_aliases():
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("""
-                DELETE FROM boss_aliases a
-                USING boss_aliases b
-                WHERE a.id < b.id
-                  AND a.boss_id = b.boss_id
-                  AND a.keyword = b.keyword
-            """)
-            cursor.execute("""
-                DO $$
-                BEGIN
-                    IF NOT EXISTS (
-                        SELECT 1 FROM pg_indexes WHERE indexname = 'unique_boss_keyword'
-                    ) THEN
-                        CREATE UNIQUE INDEX unique_boss_keyword ON boss_aliases(boss_id, keyword);
-                    END IF;
-                END$$;
-            """)
-            conn.commit()
-            cursor.close()
-            conn.close()
-            print("✅ 已清除重複 boss_aliases\n✅ 已建立唯一索引")
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            DELETE FROM boss_aliases a
+            USING boss_aliases b
+            WHERE a.id < b.id
+              AND a.boss_id = b.boss_id
+              AND a.keyword = b.keyword
+        """)
+        cursor.execute("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_indexes WHERE indexname = 'unique_boss_keyword'
+                ) THEN
+                    CREATE UNIQUE INDEX unique_boss_keyword ON boss_aliases(boss_id, keyword);
+                END IF;
+            END$$;
+        """)
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print("✅ 已清除重複 boss_aliases\n✅ 已建立唯一索引")
 
     except Exception as e:
         print("❌ 清理/索引建立失敗：", e)
@@ -140,7 +139,7 @@ def callback():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     text = event.message.text.strip()
-    group_id = event.source.group_id if event.source.type == "group" else "single"
+    group_id = event.source.group_id if event.source.type == "group" else event.source.user_id
     # threading.Thread(target=process_event, args=(event,)).start()
     # 處理 K 克4 170124（當日指定時間）
     if text.lower().startswith("k "):
@@ -275,37 +274,349 @@ def handle_message(event):
         return
 
     text = event.message.text.strip().lower()
-    group_id = event.source.group_id if event.source.type == "group" else "single"
+    group_id = event.source.group_id if event.source.type == "group" else event.source.user_id
     if text in ["kb all", "出"]:
-        # ✅ 立即快速回應，避免 reply_token 過期
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⏳ 查詢中，稍後回覆結果"))
         threading.Thread(target=process_kb_all, args=(group_id,)).start()
+        return
 
-        # ✅ 背景處理查詢與 push message
-        # if group_id:
-        #     threading.Thread(target=process_kb_all, args=(group_id,)).start()
+        # conn = get_db_connection()
+        # cursor = conn.cursor()
+        #
+        # cursor.execute("""
+        #     SELECT
+        #         b.display_name,
+        #         t.id,  -- boss_tasks id
+        #         t.kill_time,
+        #         b.respawn_hours
+        #     FROM boss_list b
+        #     LEFT JOIN LATERAL (
+        #         SELECT id, kill_time
+        #         FROM boss_tasks
+        #         WHERE boss_id = b.id AND group_id = %s
+        #         ORDER BY kill_time DESC, id DESC
+        #         LIMIT 1
+        #     ) t ON true
+        #     ORDER BY
+        #       CASE WHEN t.kill_time IS NULL THEN 1 ELSE 0 END,
+        #       (t.kill_time + (b.respawn_hours || ' hours')::interval)
+        # """, (group_id,))
+        # results = cursor.fetchall()
+        # cursor.close()
+        # conn.close()
+        #
+        # tz = pytz.timezone('Asia/Taipei')
+        # now = datetime.now(tz)
+        # soon = now + timedelta(minutes=30)
+        # next_24hr = now + timedelta(hours=24)
+        #
+        # lines = ["🕓 即將重生 BOSS：\n"]
+        #
+        # yellow_list = [
+        #     "被汙染的克魯瑪", "司穆艾爾", "提米特利斯", "突變克魯瑪", "黑色蕾爾莉",
+        #     "寇倫", "提米妮爾", "卡坦", "蘭多勒", "貝希莫斯", "薩班", "史坦",
+        #     "忘卻之鏡", "大地祭壇", "水之祭壇", "風之祭壇", "黑闇祭壇", "克拉奇",
+        #     "梅杜莎", "沙勒卡", "塔拉金"
+        # ]
+        #
+        # purple_list = [
+        #     "黑卡頓", "塔那透斯", "巴倫", "摩德烏斯", "歐克斯", "薩拉克斯", "哈普", "霸拉克",
+        #     "安德拉斯", "納伊阿斯", "核心基座", "巨蟻女王", "卡布里歐", "鳳凰", "猛龍獸",
+        #     "奧爾芬", "弗林特", "拉何"
+        # ]
+        #
+        # flex_contents = []
+        #
+        # sorted_results = sorted(results, key=lambda r: (r[2] + timedelta(hours=r[3])) if r[2] else datetime.max)
+        # for name, task_id, kill_time, hours in sorted_results:
+        #
+        #     box = {
+        #         "type": "box",
+        #         "layout": "vertical",
+        #         "paddingAll": "md",
+        #         "margin": "sm",
+        #         "contents": [],
+        #     }
+        #
+        #     # 判斷有無紀錄
+        #     if kill_time:
+        #         respawn_time = kill_time.astimezone(tz) + timedelta(hours=hours)
+        #         if now < respawn_time <= soon:
+        #             color = "#D60000"
+        #             note = "（快重生）"
+        #             emoji = "🔥 "
+        #             weight = "bold"
+        #             text_block = {
+        #                 "type": "text",
+        #                 "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
+        #                 "color": color,
+        #                 "weight": weight,
+        #                 "size": "sm",
+        #                 "wrap": True
+        #             }
+        #             box = {
+        #                 "type": "box",
+        #                 "layout": "vertical",
+        #                 "contents": [text_block]
+        #             }
+        #             if name in yellow_list:
+        #                 box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
+        #             elif name in purple_list:
+        #                 box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
+        #             flex_contents.append(box)
+        #         elif now > respawn_time:
+        #             diff = (now - respawn_time).total_seconds()
+        #             passed = int(diff // (hours * 3600))
+        #             note = f"（過{passed}）" if passed >= 1 else ""
+        #             color = "#999999"
+        #             emoji = ""
+        #             weight = "regular"
+        #             text_block = {
+        #                 "type": "text",
+        #                 "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
+        #                 "color": color,
+        #                 "weight": weight,
+        #                 "size": "sm",
+        #                 "wrap": True
+        #             }
+        #             box = {
+        #                 "type": "box",
+        #                 "layout": "vertical",
+        #                 "contents": [text_block]
+        #             }
+        #             if name in yellow_list:
+        #                 box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
+        #             elif name in purple_list:
+        #                 box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
+        #             flex_contents.append(box)
+        #         else:
+        #             color = "#000000"
+        #             note = ""
+        #             emoji = ""
+        #             weight = "regular"
+        #             text_block = {
+        #                 "type": "text",
+        #                 "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
+        #                 "color": color,
+        #                 "weight": weight,
+        #                 "size": "sm",
+        #                 "wrap": True
+        #             }
+        #             box = {
+        #                 "type": "box",
+        #                 "layout": "vertical",
+        #                 "contents": [text_block]
+        #             }
+        #             if name in yellow_list:
+        #                 box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
+        #             elif name in purple_list:
+        #                 box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
+        #             flex_contents.append(box)
+        #         time_str = respawn_time.strftime("%H:%M:%S")
+        #     else:
+        #         text_block = {
+        #             "type": "text",
+        #             "text": f"__:__:__ {name}",
+        #             "color": "#CCCCCC",
+        #             "size": "sm",
+        #             "wrap": True
+        #         }
+        #         box = {
+        #             "type": "box",
+        #             "layout": "vertical",
+        #             "contents": [text_block]
+        #         }
+        #         flex_contents.append(box)
+        #
+        # bubble = {
+        #     "type": "bubble",
+        #     "body": {
+        #         "type": "box",
+        #         "layout": "vertical",
+        #         "paddingAll": "md",
+        #         "contents": [
+        #             {
+        #                 "type": "text",
+        #                 "text": "🕓 即將重生 BOSS",
+        #                 "weight": "bold",
+        #                 "size": "md",
+        #                 "margin": "md"
+        #             },
+        #             {
+        #                 "type": "separator",
+        #                 "margin": "md"
+        #             },
+        #             *flex_contents
+        #         ]
+        #     }
+        # }
+        #
+        # for name, task_id, kill_time, respawn_hours in results:
+        #     if kill_time:
+        #         respawn_time = kill_time.replace(tzinfo=pytz.timezone('Asia/Taipei')) + timedelta(hours=respawn_hours)
+        #         if now <= respawn_time <= next_24hr:
+        #             lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}\n")
+        #         elif now > respawn_time:
+        #             if respawn_hours:
+        #                 diff = (now - respawn_time).total_seconds()
+        #                 passed_cycles = int(diff // (respawn_hours * 3600))  # 向下取整，避免誤差提前進位
+        #                 lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}（過{passed_cycles}）\n")
+        #             else:
+        #                 lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}\n")
+        #         else:
+        #             lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}\n")
+        #     else:
+        #         lines.append(f"__:__:__ {name}\n")
+        #
+        # reply_text = ''.join(lines)
+        # line_bot_api.reply_message(
+        #     event.reply_token,
+        #     messages=[
+        #         FlexSendMessage(alt_text="BOSS 重生預測表", contents=bubble)
+        #         # TextSendMessage(text=reply_text)
+        #     ]
+        # )
+    # ✅ ALIAS 指令管理區段
+    if text.startswith("alias ") or text.startswith("add "):
+        parts = text.split()
+        if len(parts) < 2:
+            line_bot_api.reply_message(event.reply_token,
+                                       TextSendMessage(text="⚠️ 格式錯誤，請使用：alias 別名 正式名稱"))
+            return
 
+        subcommand = parts[1].lower()
+
+        # alias del keyword
+        if subcommand == "del" and len(parts) == 3:
+            keyword = parts[2].lower()
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM boss_aliases WHERE keyword = %s", (keyword,))
+            conn.commit()
+            cursor.close()
+            conn.close()
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🗑️ 已刪除別名「{keyword}」"))
+            return
+
+        # alias check keyword
+        if subcommand == "check" and len(parts) == 3:
+            keyword = parts[2].lower()
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT b.display_name FROM boss_aliases a
+                JOIN boss_list b ON a.boss_id = b.id
+                WHERE a.keyword = %s
+            """, (keyword,))
+            row = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            if row:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🔍 「{keyword}」 對應 BOSS：{row[0]}"))
+            else:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"❌ 找不到「{keyword}」的對應 BOSS"))
+            return
+
+        # ✅ alias list（只顯示本群使用過的 BOSS）
+        if subcommand == "list":
+            group_id = event.source.group_id if event.source.type == "group" else event.source.user_id
+            if group_id == "single":
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 此功能僅限群組使用"))
+                return
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT DISTINCT a.keyword, b.display_name
+                FROM boss_aliases a
+                JOIN boss_list b ON a.boss_id = b.id
+                JOIN boss_tasks t ON b.id = t.boss_id
+                WHERE t.group_id = %s
+                ORDER BY b.display_name
+            """, (group_id,))
+            rows = cursor.fetchall()
+            cursor.close()
+            conn.close()
+
+            if not rows:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📭 本群組尚未使用過任何別名。"))
+                return
+
+            # 建立 Flex Message 卡片內容
+            alias_contents = [
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                        {"type": "text", "text": k, "size": "sm", "flex": 2, "weight": "bold"},
+                        {"type": "text", "text": "→", "size": "sm", "flex": 1},
+                        {"type": "text", "text": n, "size": "sm", "flex": 5}
+                    ]
+                } for k, n in rows
+            ]
+
+            bubble = {
+                "type": "bubble",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {"type": "text", "text": "📘 本群組別名清單", "weight": "bold", "size": "md", "margin": "md"},
+                        {"type": "separator", "margin": "md"},
+                        *alias_contents
+                    ]
+                }
+            }
+
+            line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="本群別名清單", contents=bubble))
+            return
+
+        # alias 新增 keyword → display_name
+        if len(parts) >= 3:
+            keyword = parts[1].lower()
+            target_name = parts[2]
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM boss_list WHERE display_name = %s", (target_name,))
+            row = cursor.fetchone()
+            if row:
+                boss_id = row[0]
+                cursor.execute(
+                    "INSERT INTO boss_aliases (boss_id, keyword) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                    (boss_id, keyword)
+                )
+                conn.commit()
+                reply_text = f"✅ 已將「{keyword}」設定為「{target_name}」的別名！"
+            else:
+                reply_text = f"❌ 找不到名稱為「{target_name}」的 BOSS。"
+            cursor.close()
+            conn.close()
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+            return
+
+def process_kb_all(group_id):
+    try:
         conn = get_db_connection()
         cursor = conn.cursor()
 
         cursor.execute("""
-            SELECT
-                b.display_name,
-                t.id,  -- boss_tasks id
-                t.kill_time,
-                b.respawn_hours
-            FROM boss_list b
-            LEFT JOIN LATERAL (
-                SELECT id, kill_time
-                FROM boss_tasks
-                WHERE boss_id = b.id AND group_id = %s
-                ORDER BY kill_time DESC, id DESC
-                LIMIT 1
-            ) t ON true
-            ORDER BY 
-              CASE WHEN t.kill_time IS NULL THEN 1 ELSE 0 END,
-              (t.kill_time + (b.respawn_hours || ' hours')::interval)
-        """, (group_id,))
+                    SELECT
+                        b.display_name,
+                        t.id,  -- boss_tasks id
+                        t.kill_time,
+                        b.respawn_hours
+                    FROM boss_list b
+                    LEFT JOIN LATERAL (
+                        SELECT id, kill_time
+                        FROM boss_tasks
+                        WHERE boss_id = b.id AND group_id = %s
+                        ORDER BY kill_time DESC, id DESC
+                        LIMIT 1
+                    ) t ON true
+                    ORDER BY 
+                      CASE WHEN t.kill_time IS NULL THEN 1 ELSE 0 END,
+                      (t.kill_time + (b.respawn_hours || ' hours')::interval)
+                """, (group_id,))
         results = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -473,166 +784,10 @@ def handle_message(event):
             else:
                 lines.append(f"__:__:__ {name}\n")
 
-        reply_text = ''.join(lines)
-        line_bot_api.reply_message(
-            event.reply_token,
-            messages=[
-                FlexSendMessage(alt_text="BOSS 重生預測表", contents=bubble)
-                # TextSendMessage(text=reply_text)
-            ]
-        )
-    # ✅ ALIAS 指令管理區段
-    if text.startswith("alias ") or text.startswith("add "):
-        parts = text.split()
-        if len(parts) < 2:
-            line_bot_api.reply_message(event.reply_token,
-                                       TextSendMessage(text="⚠️ 格式錯誤，請使用：alias 別名 正式名稱"))
-            return
-
-        subcommand = parts[1].lower()
-
-        # alias del keyword
-        if subcommand == "del" and len(parts) == 3:
-            keyword = parts[2].lower()
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM boss_aliases WHERE keyword = %s", (keyword,))
-            conn.commit()
-            cursor.close()
-            conn.close()
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🗑️ 已刪除別名「{keyword}」"))
-            return
-
-        # alias check keyword
-        if subcommand == "check" and len(parts) == 3:
-            keyword = parts[2].lower()
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT b.display_name FROM boss_aliases a
-                JOIN boss_list b ON a.boss_id = b.id
-                WHERE a.keyword = %s
-            """, (keyword,))
-            row = cursor.fetchone()
-            cursor.close()
-            conn.close()
-            if row:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🔍 「{keyword}」 對應 BOSS：{row[0]}"))
-            else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"❌ 找不到「{keyword}」的對應 BOSS"))
-            return
-
-        # ✅ alias list（只顯示本群使用過的 BOSS）
-        if subcommand == "list":
-            group_id = event.source.group_id if event.source.type == "group" else "single"
-            if group_id == "single":
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 此功能僅限群組使用"))
-                return
-
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT DISTINCT a.keyword, b.display_name
-                FROM boss_aliases a
-                JOIN boss_list b ON a.boss_id = b.id
-                JOIN boss_tasks t ON b.id = t.boss_id
-                WHERE t.group_id = %s
-                ORDER BY b.display_name
-            """, (group_id,))
-            rows = cursor.fetchall()
-            cursor.close()
-            conn.close()
-
-            if not rows:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📭 本群組尚未使用過任何別名。"))
-                return
-
-            # 建立 Flex Message 卡片內容
-            alias_contents = [
-                {
-                    "type": "box",
-                    "layout": "horizontal",
-                    "contents": [
-                        {"type": "text", "text": k, "size": "sm", "flex": 2, "weight": "bold"},
-                        {"type": "text", "text": "→", "size": "sm", "flex": 1},
-                        {"type": "text", "text": n, "size": "sm", "flex": 5}
-                    ]
-                } for k, n in rows
-            ]
-
-            bubble = {
-                "type": "bubble",
-                "body": {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {"type": "text", "text": "📘 本群組別名清單", "weight": "bold", "size": "md", "margin": "md"},
-                        {"type": "separator", "margin": "md"},
-                        *alias_contents
-                    ]
-                }
-            }
-
-            line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="本群別名清單", contents=bubble))
-            return
-
-        # alias 新增 keyword → display_name
-        if len(parts) >= 3:
-            keyword = parts[1].lower()
-            target_name = parts[2]
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT id FROM boss_list WHERE display_name = %s", (target_name,))
-            row = cursor.fetchone()
-            if row:
-                boss_id = row[0]
-                cursor.execute(
-                    "INSERT INTO boss_aliases (boss_id, keyword) VALUES (%s, %s) ON CONFLICT DO NOTHING",
-                    (boss_id, keyword)
-                )
-                conn.commit()
-                reply_text = f"✅ 已將「{keyword}」設定為「{target_name}」的別名！"
-            else:
-                reply_text = f"❌ 找不到名稱為「{target_name}」的 BOSS。"
-            cursor.close()
-            conn.close()
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-            return
-
-def process_kb_all(group_id):
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            SELECT
-                b.display_name,
-                t.id,
-                t.kill_time,
-                b.respawn_hours
-            FROM boss_list b
-            LEFT JOIN LATERAL (
-                SELECT id, kill_time
-                FROM boss_tasks
-                WHERE boss_id = b.id AND group_id = %s
-                ORDER BY kill_time DESC, id DESC
-                LIMIT 1
-            ) t ON true
-            ORDER BY 
-              CASE WHEN t.kill_time IS NULL THEN 1 ELSE 0 END,
-              (t.kill_time + (b.respawn_hours || ' hours')::interval)
-        """, (group_id,))
-        results = cursor.fetchall()
-        cursor.close()
-        conn.close()
-
-        # 建立 Flex Bubble
-        bubble = build_flex_boss_status(results)
-        line_bot_api.push_message(group_id, FlexSendMessage(alt_text="BOSS 重生預測表", contents=bubble))
-
-    except Exception as e:
-        print(f"❌ 處理 kb all 發生錯誤：{e}")
-
+    line_bot_api.push_message(
+        group_id,
+        FlexSendMessage(alt_text="BOSS 重生預測表", contents=bubble)
+    )
 
 def process_event(event):
     text = event.message.text.strip().lower()
