@@ -279,6 +279,8 @@ def handle_message(event):
     if text in ["kb all", "出"]:
         # ✅ 立即快速回應，避免 reply_token 過期
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⏳ 查詢中，稍後回覆結果"))
+        threading.Thread(target=process_kb_all, args=(group_id,)).start()
+
         # ✅ 背景處理查詢與 push message
         # if group_id:
         #     threading.Thread(target=process_kb_all, args=(group_id,)).start()
@@ -453,171 +455,7 @@ def handle_message(event):
                 ]
             }
         }
-    # if text in ["kb all", "出"]:
-    #     conn = get_db_connection()
-    #     cursor = conn.cursor()
-    #     cursor.execute("""
-    #         SELECT b.display_name, t.kill_time, b.respawn_hours
-    #         FROM boss_list b
-    #         LEFT JOIN LATERAL (
-    #             SELECT kill_time
-    #             FROM boss_tasks
-    #             WHERE boss_id = b.id AND group_id = 'Cbf6ece7d4ad7dec03f5dec9e7643ffa1' %s
-    #             ORDER BY kill_time DESC
-    #             LIMIT 1
-    #         ) t ON true
-    #     """, (group_id,))
-    #     results = cursor.fetchall()
-    #     # print(f"📊 查詢結果：{results}")
-    #     cursor.close()
-    #     conn.close()
-    #
-    #     flex_contents = []
-    #     yellow_list = [
-    #         "被汙染的克魯瑪", "司穆艾爾", "提米特利斯", "突變克魯瑪", "黑色蕾爾莉",
-    #         "寇倫", "提米妮爾", "卡坦", "蘭多勒", "貝希莫斯", "薩班", "史坦",
-    #         "忘卻之鏡", "大地祭壇", "水之祭壇", "風之祭壇", "黑闇祭壇", "克拉奇",
-    #         "梅杜莎", "沙勒卡", "塔拉金"
-    #     ]
-    #
-    #     purple_list = [
-    #         "黑卡頓", "塔那透斯", "巴倫", "摩德烏斯", "歐克斯", "薩拉克斯", "哈普", "霸拉克",
-    #         "安德拉斯", "納伊阿斯", "核心基座", "巨蟻女王", "卡布里歐", "鳳凰", "猛龍獸",
-    #         "奧爾芬", "弗林特", "拉何"
-    #     ]
-    #
-    #     now = datetime.now(pytz.timezone('Asia/Taipei'))
-    #     soon = now + timedelta(minutes=30)
-    #     next_24hr = now + timedelta(hours=24)
-    #     lines = ["🕓 即將重生 BOSS：\n"]
-    #
-    #     for name, kill_time, respawn_hours in results:
-    #         if kill_time:
-    #             respawn_time = kill_time.replace(tzinfo=pytz.timezone('Asia/Taipei')) + timedelta(hours=respawn_hours)
-    #             if now < respawn_time <= soon:
-    #                 color = "#D60000"  # 紅色
-    #                 emoji = "🔥 "
-    #                 note = "（快重生）"
-    #                 weight = "bold"
-    #                 text_block = {
-    #                     "type": "text",
-    #                     "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
-    #                     "color": color,
-    #                     "weight": weight,
-    #                     "size": "sm",
-    #                     "wrap": True
-    #                 }
-    #                 box = {
-    #                     "type": "box",
-    #                     "layout": "vertical",
-    #                     "contents": [text_block]
-    #                 }
-    #                 if name in yellow_list:
-    #                     box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
-    #                 elif name in purple_list:
-    #                     box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
-    #                 flex_contents.append(box)
-    #             elif now > respawn_time:
-    #                 if respawn_hours:
-    #                     diff = (now - respawn_time).total_seconds()
-    #                     passed_cycles = int(diff // (respawn_hours * 3600))
-    #                     if passed_cycles >= 1:
-    #                         note = f"（過{passed_cycles}）"
-    #                     else:
-    #                         note = ""
-    #                     color = "#999999"  # 灰色
-    #                     emoji = ""
-    #                     weight = "regular"
-    #                     text_block = {
-    #                         "type": "text",
-    #                         "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
-    #                         "color": color,
-    #                         "weight": weight,
-    #                         "size": "sm",
-    #                         "wrap": True
-    #                     }
-    #                     box = {
-    #                         "type": "box",
-    #                         "layout": "vertical",
-    #                         "contents": [text_block]
-    #                     }
-    #                     if name in yellow_list:
-    #                         box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
-    #                     elif name in purple_list:
-    #                         box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
-    #                     flex_contents.append(box)
-    #                 else:
-    #                     color = "#999999"
-    #                     emoji = ""
-    #                     note = ""
-    #                     weight = "regular"
-    #                     text_block = {
-    #                         "type": "text",
-    #                         "text": f"{emoji}{respawn_time.strftime('%H:%M:%S')} {name}{note}",
-    #                         "color": color,
-    #                         "weight": weight,
-    #                         "size": "sm",
-    #                         "wrap": True
-    #                     }
-    #                     box = {
-    #                         "type": "box",
-    #                         "layout": "vertical",
-    #                         "contents": [text_block]
-    #                     }
-    #                     if name in yellow_list:
-    #                         box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
-    #                     elif name in purple_list:
-    #                         box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
-    #                     flex_contents.append(box)
-    #             else:
-    #                 color = "#000000"
-    #                 emoji = ""
-    #                 note = ""
-    #                 weight = "regular"
-    #                 text_block = {
-    #                     "type": "text",
-    #                     "text": f"__:__:__ {name}",
-    #                     "color": "#CCCCCC",
-    #                     "size": "sm",
-    #                     "wrap": True
-    #                 }
-    #                 box = {
-    #                     "type": "box",
-    #                     "layout": "vertical",
-    #                     "contents": [text_block]
-    #                 }
-    #                 if name in yellow_list:
-    #                     box["backgroundColor"] = "#FFF9DC"  # 淡鵝黃色
-    #                 elif name in purple_list:
-    #                     box["backgroundColor"] = "#F5F0FF"  # 淡粉紫色
-    #                 flex_contents.append(box)
-    #         else:
-    #             text_block = {
-    #                 "type": "text",
-    #                 "text": f"__:__:__ {name}",
-    #                 "color": "#CCCCCC",
-    #                 "size": "sm",
-    #                 "wrap": True
-    #             }
-    #             box = {
-    #                 "type": "box",
-    #                 "layout": "vertical",
-    #                 "contents": [text_block]
-    #             }
-    #             flex_contents.append(box)
-    #
-    #     bubble = {
-    #         "type": "bubble",
-    #         "body": {
-    #             "type": "box",
-    #             "layout": "vertical",
-    #             "contents": [
-    #                 {"type": "text", "text": "🕓 即將重生 BOSS", "weight": "bold", "size": "md", "margin": "md"},
-    #                 {"type": "separator", "margin": "md"},
-    #                 *flex_contents
-    #             ]
-    #         }
-    #     }
+
         for name, task_id, kill_time, respawn_hours in results:
             if kill_time:
                 respawn_time = kill_time.replace(tzinfo=pytz.timezone('Asia/Taipei')) + timedelta(hours=respawn_hours)
@@ -760,6 +598,41 @@ def handle_message(event):
             conn.close()
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
+
+def process_kb_all(group_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT
+                b.display_name,
+                t.id,
+                t.kill_time,
+                b.respawn_hours
+            FROM boss_list b
+            LEFT JOIN LATERAL (
+                SELECT id, kill_time
+                FROM boss_tasks
+                WHERE boss_id = b.id AND group_id = %s
+                ORDER BY kill_time DESC, id DESC
+                LIMIT 1
+            ) t ON true
+            ORDER BY 
+              CASE WHEN t.kill_time IS NULL THEN 1 ELSE 0 END,
+              (t.kill_time + (b.respawn_hours || ' hours')::interval)
+        """, (group_id,))
+        results = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        # 建立 Flex Bubble
+        bubble = build_flex_boss_status(results)
+        line_bot_api.push_message(group_id, FlexSendMessage(alt_text="BOSS 重生預測表", contents=bubble))
+
+    except Exception as e:
+        print(f"❌ 處理 kb all 發生錯誤：{e}")
+
 
 def process_event(event):
     text = event.message.text.strip().lower()
