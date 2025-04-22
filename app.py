@@ -127,10 +127,11 @@ def callback():
     body = request.get_data(as_text=True)
     try:
         # ✅ 這行會觸發 handler 處理 event，但我們用 Thread 包住
-        threading.Thread(target=handler.handle, args=(body, signature)).start()
+        # threading.Thread(target=handler.handle, args=(body, signature)).start()
+        # ✅ 正確寫法：主執行緒立即回應
+        handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
-
         # ✅ 無論有沒有成功處理，都立即告訴 LINE 一切 OK
     return 'OK', 200
 
