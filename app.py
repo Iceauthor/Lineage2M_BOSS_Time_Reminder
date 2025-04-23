@@ -4,17 +4,35 @@ import json
 import psycopg2
 from flask import Flask, request, abort
 from dotenv import load_dotenv
-from linebot import LineBotApi, WebhookHandler
+from linebot import WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage, FlexSendMessage
+from linebot import WebhookHandler
+from linebot.models import (
+    MessageEvent,
+    TextMessage,
+    TextSendMessage,
+    FlexSendMessage,
+    FollowEvent,
+    UnfollowEvent
+)
+from linebot.v3.messaging import MessagingApi, Configuration, ApiClient
+from linebot.v3.messaging.models import TextMessage as V3TextMessage, FlexMessage as V3FlexMessage
 from datetime import datetime, timedelta
 import pytz
 
 
 load_dotenv()
 app = Flask(__name__)
-line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
+# line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
+configuration = Configuration(access_token=os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
+api_client = ApiClient(configuration)
+messaging_api = MessagingApi(api_client)
+
+# messaging_api.push_message(
+#     to=group_id,
+#     messages=[TextMessage(text=msg)]
+# )
 
 def get_db_connection():
     return psycopg2.connect(
@@ -142,7 +160,12 @@ def callback():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     text = event.message.text.strip()
-    group_id = event.source.group_id if event.source.type == "group" else "single"
+    # group_id = event.source.group_id if event.source.type == "group" else "single"
+    group_id = get_group_id(event)
+    messaging_api.push_message(
+        to=group_id,
+        messages=[TextMessage(text="你輸入了 ...")]
+    )
 
     # 處理 K 克4 170124（當日指定時間）
     if text.lower().startswith("k "):
@@ -673,6 +696,15 @@ def handle_message(event):
             conn.close()
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
+
+
+def get_group_id(event):
+    if hasattr(event.source, "group_id"):
+        return event.source.group_id
+    elif hasattr(event.source, "room_id"):
+        return event.source.room_id
+    else:
+        return event.source.user_id
 
 
 # # 自動推播：重生時間倒數兩分鐘提醒
