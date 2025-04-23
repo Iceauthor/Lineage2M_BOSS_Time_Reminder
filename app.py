@@ -482,6 +482,19 @@ def handle_message(event):
                     if respawn_hours:
                         diff = (now - respawn_time).total_seconds()
                         passed_cycles = int(diff // (respawn_hours * 3600))  # 向下取整，避免誤差提前進位
+                        if passed >= 1:
+                            respawn_time += timedelta(hours=passed * respawn_hours)
+                            # 更新資料庫
+                            update_conn = get_db_connection()
+                            update_cursor = update_conn.cursor()
+                            update_cursor.execute("""
+                                            UPDATE boss_tasks
+                                            SET respawn_time = %s
+                                            WHERE id = %s
+                                        """, (respawn_time, task_id))
+                            update_conn.commit()
+                            update_cursor.close()
+                            update_conn.close()
                         lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}（過{passed_cycles}）\n")
                     else:
                         lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}\n")
