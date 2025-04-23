@@ -17,6 +17,7 @@ from linebot.models import (
 )
 from linebot.v3.messaging import MessagingApi, Configuration, ApiClient
 from linebot.v3.messaging.models import TextMessage as V3TextMessage, FlexMessage as V3FlexMessage
+from linebot.v3.messaging.models import PushMessageRequest
 from datetime import datetime, timedelta
 import pytz
 
@@ -163,10 +164,11 @@ def handle_message(event):
     # group_id = event.source.group_id if event.source.type == "group" else "single"
     group_id = get_group_id(event)
     messaging_api.push_message(
-        to=group_id,
-        messages=[TextMessage(text="你輸入了 ...")]
+        push_message_request=PushMessageRequest(
+            to=group_id,
+            messages=[TextMessage(text="你輸入了 ..." + text)]
+        )
     )
-
     # 處理 K 克4 170124（當日指定時間）
     if text.lower().startswith("k "):
         parts = text.split()
@@ -850,8 +852,10 @@ def reminder_job():
                     suffix = f"（過{passed}）" if passed > 0 else ""
                     msg = f"*{name}* 即將出現{suffix}"
                     messaging_api.push_message(
-                        to=group_id,
-                        messages=[TextMessage(text="msg")]
+                        push_message_request=PushMessageRequest(
+                            to=group_id,
+                            messages=[TextMessage(text=msg)]
+                        )
                     )
                     # line_bot_api.push_message(group_id, TextSendMessage(text=msg))
                 except Exception as e:
