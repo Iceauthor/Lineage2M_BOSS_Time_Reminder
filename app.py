@@ -158,7 +158,7 @@ def callback():
     return "OK", 200  # ✅ 立即給 LINE 回應
 
 
-@handler.add(MessageEvent, message=TextMessage)
+@handler.add(MessageEvent, message=V3TextMessage)
 def handle_message(event):
     text = event.message.text.strip()
     # group_id = event.source.group_id if event.source.type == "group" else "single"
