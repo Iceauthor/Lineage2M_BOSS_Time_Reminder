@@ -119,10 +119,14 @@ auto_insert_boss_list()
 def home():
     return "✅ Lineage2M BOSS Reminder Bot is running."
 
+
 # ✅ 新增 /ping route（避免平台睡眠）
 @app.route("/ping", methods=["GET"])
 def ping():
-    return "pong", 200
+    tz = pytz.timezone("Asia/Taipei")
+    now = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+    return f"pong - {now}", 200
+
 
 @app.route("/callback", methods=['POST'])
 def callback():
