@@ -633,6 +633,64 @@ def handle_message(event):
 #         print("❌ 排程提醒錯誤：", e)
 
 # ✅ 自動推播 BOSS 重生提醒（倒數兩分鐘 + 過期仍持續提醒）
+# def reminder_job():
+#     try:
+#         tz = pytz.timezone("Asia/Taipei")
+#         now = datetime.now(tz)
+#         soon = now + timedelta(minutes=2)
+#
+#         conn = get_db_connection()
+#         cursor = conn.cursor()
+#
+#         # 1. 查出兩分鐘內即將出現的 BOSS
+#         cursor.execute("""
+#             SELECT b.display_name, t.group_id, t.respawn_time
+#             FROM boss_tasks t
+#             JOIN boss_list b ON b.id = t.boss_id
+#             WHERE t.respawn_time BETWEEN %s AND %s
+#         """, (now, soon))
+#         results = cursor.fetchall()
+#
+#         # 2. 查出所有已經過期的 BOSS（不管過多久）
+#         cursor.execute("""
+#             SELECT b.display_name, t.group_id, t.respawn_time, b.respawn_hours
+#             FROM boss_tasks t
+#             JOIN boss_list b ON b.id = t.boss_id
+#             WHERE t.respawn_time < %s
+#         """, (now,))
+#         expired = cursor.fetchall()
+#
+#         # 3. 推播快出現者
+#         for name, group_id, respawn in results:
+#             if not group_id or not group_id.startswith("C"):
+#                 print(f"⚠️ 無效 group_id：{group_id}，跳過")
+#                 continue
+#             try:
+#                 msg = f"*{name}* 即將出現"
+#                 line_bot_api.push_message(group_id, TextSendMessage(text=msg))
+#             except Exception as e:
+#                 print(f"❌ 提醒失敗：{e}")
+#
+#         # 4. 推播已過期但還沒再輸入的 BOSS（持續提醒）
+#         for name, group_id, respawn, hours in expired:
+#             if not group_id or not group_id.startswith("C"):
+#                 continue
+#             try:
+#                 # 計算已過幾次 respawn cycle
+#                 delta = (now - respawn).total_seconds()
+#                 passed = int(delta // (hours * 3600))
+#                 if passed >= 1:
+#                     msg = f"*{name}* 即將出現（過{passed}）"
+#                     line_bot_api.push_message(group_id, TextSendMessage(text=msg))
+#             except Exception as e:
+#                 print(f"❌ 過期提醒失敗：{e}")
+#
+#         cursor.close()
+#         conn.close()
+#     except Exception as e:
+#         print("❌ 排程提醒錯誤：", e)
+
+# ✅ 自動推播 BOSS 重生提醒（兩分鐘內 + 過期持續提醒 + 正確時間更新）
 def reminder_job():
     try:
         tz = pytz.timezone("Asia/Taipei")
@@ -642,53 +700,38 @@ def reminder_job():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # 1. 查出兩分鐘內即將出現的 BOSS
-        cursor.execute("""
-            SELECT b.display_name, t.group_id, t.respawn_time
-            FROM boss_tasks t
-            JOIN boss_list b ON b.id = t.boss_id
-            WHERE t.respawn_time BETWEEN %s AND %s
-        """, (now, soon))
-        results = cursor.fetchall()
-
-        # 2. 查出所有已經過期的 BOSS（不管過多久）
+        # 查詢所有 boss 的最新資訊（含週期）
         cursor.execute("""
             SELECT b.display_name, t.group_id, t.respawn_time, b.respawn_hours
             FROM boss_tasks t
             JOIN boss_list b ON b.id = t.boss_id
-            WHERE t.respawn_time < %s
-        """, (now,))
-        expired = cursor.fetchall()
+        """)
+        results = cursor.fetchall()
 
-        # 3. 推播快出現者
-        for name, group_id, respawn in results:
-            if not group_id or not group_id.startswith("C"):
-                print(f"⚠️ 無效 group_id：{group_id}，跳過")
-                continue
-            try:
-                msg = f"*{name}* 即將出現"
-                line_bot_api.push_message(group_id, TextSendMessage(text=msg))
-            except Exception as e:
-                print(f"❌ 提醒失敗：{e}")
-
-        # 4. 推播已過期但還沒再輸入的 BOSS（持續提醒）
-        for name, group_id, respawn, hours in expired:
+        for name, group_id, respawn, hours in results:
             if not group_id or not group_id.startswith("C"):
                 continue
-            try:
-                # 計算已過幾次 respawn cycle
-                delta = (now - respawn).total_seconds()
-                passed = int(delta // (hours * 3600))
-                if passed >= 1:
-                    msg = f"*{name}* 即將出現（過{passed}）"
+
+            # 計算實際下一次應重生的時間（若已過期則加上週期直到未來）
+            next_respawn = respawn
+            while next_respawn < now:
+                next_respawn += timedelta(hours=hours)
+
+            # 判斷是否即將重生（2分鐘內）
+            if 0 <= (next_respawn - now).total_seconds() <= 120:
+                try:
+                    passed = int((now - respawn).total_seconds() // (hours * 3600))
+                    suffix = f"（過{passed}）" if passed > 0 else ""
+                    msg = f"*{name}* 即將出現{suffix}"
                     line_bot_api.push_message(group_id, TextSendMessage(text=msg))
-            except Exception as e:
-                print(f"❌ 過期提醒失敗：{e}")
+                except Exception as e:
+                    print(f"❌ 提醒失敗：{e}")
 
         cursor.close()
         conn.close()
     except Exception as e:
         print("❌ 排程提醒錯誤：", e)
+
 
 @app.route("/debug-respawn", methods=["GET"])
 def debug_respawn_route():
