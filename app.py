@@ -9,7 +9,7 @@ from linebot.exceptions import InvalidSignatureError
 from linebot import WebhookHandler
 from linebot.models import (
     MessageEvent,
-    TextMessage,
+    # TextMessage,
     TextSendMessage,
     FlexSendMessage,
     FollowEvent,
@@ -166,7 +166,7 @@ def handle_message(event):
     messaging_api.push_message(
         push_message_request=PushMessageRequest(
             to=group_id,
-            messages=[TextMessage(text="你輸入了 ..." + text)]
+            messages=[V3TextMessage(text="你輸入了 ..." + text)]
         )
     )
     # 處理 K 克4 170124（當日指定時間）
@@ -854,7 +854,7 @@ def reminder_job():
                     messaging_api.push_message(
                         push_message_request=PushMessageRequest(
                             to=group_id,
-                            messages=[TextMessage(text=msg)]
+                            messages=[V3TextMessage(text=msg)]
                         )
                     )
                     # line_bot_api.push_message(group_id, TextSendMessage(text=msg))
