@@ -849,7 +849,11 @@ def reminder_job():
                 try:
                     suffix = f"（過{passed}）" if passed > 0 else ""
                     msg = f"*{name}* 即將出現{suffix}"
-                    line_bot_api.push_message(group_id, TextSendMessage(text=msg))
+                    messaging_api.push_message(
+                        to=group_id,
+                        messages=[TextMessage(text="msg")]
+                    )
+                    # line_bot_api.push_message(group_id, TextSendMessage(text=msg))
                 except Exception as e:
                     print(f"❌ 提醒失敗：{e}")
 
