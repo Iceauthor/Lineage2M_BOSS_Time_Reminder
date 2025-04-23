@@ -718,8 +718,21 @@ def reminder_job():
 
             # 計算實際下一次應重生的時間（若已過期則加上週期直到未來）
             next_respawn = respawn
+            passed = 0
             while next_respawn < now:
                 next_respawn += timedelta(hours=hours)
+                passed += 1
+
+            # ✅ 寫回資料庫，更新為最新的下一次時間點
+            if passed > 0:
+                cursor.execute("""
+                    UPDATE boss_tasks
+                    SET respawn_time = %s
+                    WHERE boss_id = (
+                        SELECT id FROM boss_list WHERE display_name = %s LIMIT 1
+                    ) AND group_id = %s
+                """, (next_respawn, name, group_id))
+                conn.commit()
 
             # 判斷是否即將重生（2分鐘內）
             if 0 <= (next_respawn - now).total_seconds() <= 120:
