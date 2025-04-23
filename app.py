@@ -735,9 +735,14 @@ def reminder_job():
                 conn.commit()
 
             # 判斷是否即將重生（2分鐘內）
+            # if 0 <= (next_respawn - now).total_seconds() <= 120:
+            #     try:
+            #         passed = int((now - respawn).total_seconds() // (hours * 3600))
+            #         suffix = f"（過{passed}）" if passed > 0 else ""
+            #         msg = f"*{name}* 即將出現{suffix}"
+            #         line_bot_api.push_message(group_id, TextSendMessage(text=msg))
             if 0 <= (next_respawn - now).total_seconds() <= 120:
                 try:
-                    passed = int((now - respawn).total_seconds() // (hours * 3600))
                     suffix = f"（過{passed}）" if passed > 0 else ""
                     msg = f"*{name}* 即將出現{suffix}"
                     line_bot_api.push_message(group_id, TextSendMessage(text=msg))
