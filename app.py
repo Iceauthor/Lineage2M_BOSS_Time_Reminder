@@ -282,15 +282,35 @@ def handle_message(event):
         conn = get_db_connection()
         cursor = conn.cursor()
 
+        # cursor.execute("""
+        #     SELECT
+        #         b.display_name,
+        #         t.id,  -- boss_tasks id
+        #         t.kill_time,
+        #         b.respawn_hours
+        #     FROM boss_list b
+        #     LEFT JOIN LATERAL (
+        #         SELECT id, kill_time
+        #         FROM boss_tasks
+        #         WHERE boss_id = b.id AND group_id = %s
+        #         ORDER BY kill_time DESC, id DESC
+        #         LIMIT 1
+        #     ) t ON true
+        #     ORDER BY
+        #       CASE WHEN t.kill_time IS NULL THEN 1 ELSE 0 END,
+        #       (t.kill_time + (b.respawn_hours || ' hours')::interval)
+        # """, (group_id,))
+
         cursor.execute("""
             SELECT
                 b.display_name,
-                t.id,  -- boss_tasks id
+                t.id,
                 t.kill_time,
+                t.respawn_time,         -- ✅ 新增這欄位
                 b.respawn_hours
             FROM boss_list b
             LEFT JOIN LATERAL (
-                SELECT id, kill_time
+                SELECT id, kill_time, respawn_time   -- ✅ 這裡也要補上
                 FROM boss_tasks
                 WHERE boss_id = b.id AND group_id = %s
                 ORDER BY kill_time DESC, id DESC
@@ -298,8 +318,9 @@ def handle_message(event):
             ) t ON true
             ORDER BY 
               CASE WHEN t.kill_time IS NULL THEN 1 ELSE 0 END,
-              (t.kill_time + (b.respawn_hours || ' hours')::interval)
+              t.respawn_time                      -- ✅ 用這裡排序而非動態計算
         """, (group_id,))
+
         results = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -511,7 +532,6 @@ def handle_message(event):
             event.reply_token,
             messages=[
                 FlexSendMessage(alt_text="BOSS 重生預測表", contents=bubble)
-                # TextSendMessage(text=reply_text)
             ]
         )
     # ✅ ALIAS 指令管理區段
