@@ -327,8 +327,10 @@ def handle_message(event):
         def next_respawn_time(r):
             if r[2]:  # r[2] 是 kill_time
                 respawn_time = r[2].astimezone(tz) + timedelta(hours=r[3])
+                while respawn_time < now:
+                    respawn_time += timedelta(hours=r[3])
                 delta = (respawn_time - now).total_seconds()
-                return delta if delta >= 0 else float('inf')
+                return delta
             else:
                 return float('inf')
 
@@ -488,14 +490,15 @@ def handle_message(event):
                             update_conn = get_db_connection()
                             update_cursor = update_conn.cursor()
                             update_cursor.execute("""
-                                            UPDATE boss_tasks
-                                            SET respawn_time = %s
-                                            WHERE id = %s
-                                        """, (respawn_time, task_id))
+                                UPDATE boss_tasks
+                                SET respawn_time = %s
+                                WHERE id = %s
+                            """, (respawn_time, task_id))
                             update_conn.commit()
                             update_cursor.close()
                             update_conn.close()
-                        lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}（過{passed_cycles}）\n")
+                        note = f"（過{passed_cycles}）" if passed_cycles >= 1 else ""
+                        lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}{note}\n")
                     else:
                         lines.append(f"{respawn_time.strftime('%H:%M:%S')} {name}\n")
                 else:
