@@ -712,6 +712,10 @@ def reminder_job():
             if not group_id or not group_id.startswith("C"):
                 continue
 
+            # 確保 respawn_time 是 timezone-aware
+            if respawn.tzinfo is None:
+                respawn = tz.localize(respawn)
+
             # 計算實際下一次應重生的時間（若已過期則加上週期直到未來）
             next_respawn = respawn
             while next_respawn < now:
