@@ -378,7 +378,19 @@ def handle_message(event):
                     passed = int(diff // (hours * 3600))
                     if passed >= 1:
                         respawn_time += timedelta(hours=passed * hours)
+                        # ✅ 即時更新資料庫
+                        update_conn = get_db_connection()
+                        update_cursor = update_conn.cursor()
+                        update_cursor.execute("""
+                                UPDATE boss_tasks
+                                SET respawn_time = %s
+                                WHERE id = %s
+                            """, (respawn_time, task_id))
+                        update_conn.commit()
+                        update_cursor.close()
+                        update_conn.close()
                     note = f"（過{passed}）" if passed >= 1 else ""
+
                     color = "#999999"
                     emoji = ""
                     weight = "regular"
