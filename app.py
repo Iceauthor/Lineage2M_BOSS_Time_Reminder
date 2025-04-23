@@ -324,6 +324,14 @@ def handle_message(event):
             "奧爾芬", "弗林特", "拉何"
         ]
 
+        def next_respawn_time(r):
+            if r[2]:  # r[2] 是 kill_time
+                respawn_time = r[2].astimezone(tz) + timedelta(hours=r[3])
+                delta = (respawn_time - now).total_seconds()
+                return delta if delta >= 0 else float('inf')
+            else:
+                return float('inf')
+
         flex_contents = []
 
         sorted_results = sorted(results, key=lambda r: (r[2] + timedelta(hours=r[3])) if r[2] else datetime.max)
