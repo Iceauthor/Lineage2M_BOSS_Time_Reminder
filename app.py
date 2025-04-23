@@ -377,7 +377,7 @@ def handle_message(event):
 
         flex_contents = []
 
-        for name, task_id, kill_time, respawn_time, hours in results:
+        for name, task_id, kill_time, respawn_time, respawn_hours in results:
             # hours 應該是 int
             if not isinstance(hours, (int, float)):
                 print("❌ hours 傳錯型別！內容：", hours, type(hours))
