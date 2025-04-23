@@ -345,13 +345,30 @@ def handle_message(event):
             "奧爾芬", "弗林特", "拉何"
         ]
 
+        # def next_respawn_time(r):
+        #     if r[2]:  # r[2] 是 kill_time
+        #         respawn_time = r[2].astimezone(tz) + timedelta(hours=r[3])
+        #         while respawn_time < now:
+        #             respawn_time += timedelta(hours=r[3])
+        #         delta = (respawn_time - now).total_seconds()
+        #         return delta
+        #     else:
+        #         return float('inf')
         def next_respawn_time(r):
             if r[2]:  # r[2] 是 kill_time
-                respawn_time = r[2].astimezone(tz) + timedelta(hours=r[3])
-                while respawn_time < now:
-                    respawn_time += timedelta(hours=r[3])
-                delta = (respawn_time - now).total_seconds()
-                return delta
+                try:
+                    hours = r[4]
+                    if not isinstance(hours, (int, float)):
+                        print(f"❌ 錯誤：hours 型別錯誤：{type(hours)}，值：{hours}")
+                        return float('inf')
+                    respawn_time = r[2].astimezone(tz) + timedelta(hours=hours)
+                    while respawn_time < now:
+                        respawn_time += timedelta(hours=hours)
+                    delta = (respawn_time - now).total_seconds()
+                    return delta
+                except Exception as e:
+                    print(f"❌ next_respawn_time 錯誤：{e}")
+                    return float('inf')
             else:
                 return float('inf')
 
