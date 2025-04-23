@@ -318,7 +318,7 @@ def handle_message(event):
             ) t ON true
             ORDER BY 
               CASE WHEN t.kill_time IS NULL THEN 1 ELSE 0 END,
-              t.respawn_time                      -- ✅ 用這裡排序而非動態計算
+              b.respawn_hours                    -- ✅ 用這裡排序而非動態計算
         """, (group_id,))
 
         results = cursor.fetchall()
@@ -507,6 +507,7 @@ def handle_message(event):
                         passed_cycles = int(diff // (respawn_hours * 3600))  # 向下取整，避免誤差提前進位
                         if passed_cycles >= 1:
                             respawn_time += timedelta(hours=passed_cycles * respawn_hours)
+                            print(f"[DEBUG] respawn_hours 的類型是：{type(respawn_hours)}")
                             # 更新資料庫
                             update_conn = get_db_connection()
                             update_cursor = update_conn.cursor()
