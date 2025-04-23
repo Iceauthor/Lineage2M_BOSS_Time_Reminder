@@ -376,6 +376,8 @@ def handle_message(event):
                 elif now > respawn_time:
                     diff = (now - respawn_time).total_seconds()
                     passed = int(diff // (hours * 3600))
+                    if passed >= 1:
+                        respawn_time += timedelta(hours=passed * hours)
                     note = f"（過{passed}）" if passed >= 1 else ""
                     color = "#999999"
                     emoji = ""
