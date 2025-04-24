@@ -161,12 +161,7 @@ def handle_message(event):
     text = event.message.text.strip()
     # group_id = event.source.group_id if event.source.type == "group" else "single"
     group_id = get_group_id(event)
-    messaging_api.push_message(
-        push_message_request=PushMessageRequest(
-            to=group_id,
-            messages=[V3TextMessage(text="你輸入了 ..." + text)]
-        )
-    )
+
     # 處理 K 克4 170124（當日指定時間）
     if text.lower().startswith("k "):
         parts = text.split()
@@ -304,26 +299,6 @@ def handle_message(event):
     if text in ["kb all", "出"]:
         conn = get_db_connection()
         cursor = conn.cursor()
-
-        # cursor.execute("""
-        #     SELECT
-        #         b.display_name,
-        #         t.id,  -- boss_tasks id
-        #         t.kill_time,
-        #         b.respawn_hours
-        #     FROM boss_list b
-        #     LEFT JOIN LATERAL (
-        #         SELECT id, kill_time
-        #         FROM boss_tasks
-        #         WHERE boss_id = b.id AND group_id = %s
-        #         ORDER BY kill_time DESC, id DESC
-        #         LIMIT 1
-        #     ) t ON true
-        #     ORDER BY
-        #       CASE WHEN t.kill_time IS NULL THEN 1 ELSE 0 END,
-        #       (t.kill_time + (b.respawn_hours || ' hours')::interval)
-        # """, (group_id,))
-
         cursor.execute("""
             SELECT
                 b.display_name,
@@ -368,15 +343,6 @@ def handle_message(event):
             "奧爾芬", "弗林特", "拉何"
         ]
 
-        # def next_respawn_time(r):
-        #     if r[2]:  # r[2] 是 kill_time
-        #         respawn_time = r[2].astimezone(tz) + timedelta(hours=r[3])
-        #         while respawn_time < now:
-        #             respawn_time += timedelta(hours=r[3])
-        #         delta = (respawn_time - now).total_seconds()
-        #         return delta
-        #     else:
-        #         return float('inf')
         def next_respawn_time(r):
             if r[2]:  # r[2] 是 kill_time
                 try:
@@ -700,6 +666,12 @@ def handle_message(event):
             reply_text(event, reply_text)
             return
 
+    messaging_api.push_message(
+        push_message_request=PushMessageRequest(
+            to=group_id,
+            messages=[V3TextMessage(text="你輸入了 ..." + text)]
+        )
+    )
 
 def get_group_id(event):
     if hasattr(event.source, "group_id"):
@@ -759,6 +731,8 @@ def reminder_job():
             if not group_id or not group_id.startswith("C"):
                 continue
 
+            if respawn_time is None:
+                continue  # 或設為 now 也可：respawn_time = now
             # 確保 respawn_time 是 timezone-aware
             if respawn_time.tzinfo is None:
                 respawn_time = tz.localize(respawn_time)
