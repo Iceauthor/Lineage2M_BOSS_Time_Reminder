@@ -675,13 +675,18 @@ def get_group_id(event):
     else:
         return event.source.user_id
 
-def reply_text(event, text):
+def reply_text(event, text, contents=None):
+    message = V3TextMessage(text=text)
+    if contents:
+        message.contents = contents
     messaging_api.reply_message(
         reply_token=event.reply_token,
         reply_message_request=ReplyMessageRequest(
-            messages=[V3TextMessage(text=text)]
+            reply_token=event.reply_token,
+            messages=[message]
         )
     )
+
 
 def send_text(group_id, msg):
     messaging_api.push_message(
