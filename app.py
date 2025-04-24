@@ -680,8 +680,7 @@ def reply_text(event, text, contents=None):
     if contents:
         message.contents = contents
     messaging_api.reply_message(
-        reply_token=event.reply_token,
-        reply_message_request=ReplyMessageRequest(
+        ReplyMessageRequest(
             reply_token=event.reply_token,
             messages=[message]
         )
