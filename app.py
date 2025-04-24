@@ -308,7 +308,7 @@ def handle_message(event):
                 b.respawn_hours
             FROM boss_list b
             LEFT JOIN LATERAL (
-                SELECT id, kill_time, respawn_time   -- ✅ 這裡也要補上
+                SELECT group_id, kill_time, respawn_time   -- ✅ 這裡也要補上
                 FROM boss_tasks
                 WHERE boss_id = b.id AND group_id = %s
                 ORDER BY kill_time DESC, id DESC
