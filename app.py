@@ -16,6 +16,7 @@ from linebot.models import TextMessage as V2TextMessage, TextSendMessage, FlexSe
 from linebot.v3.messaging import MessagingApi, Configuration, ApiClient
 from linebot.v3.messaging.models import TextMessage as V3TextMessage, FlexMessage as V3FlexMessage
 from linebot.v3.messaging.models import PushMessageRequest
+from linebot.v3.messaging.models import ReplyMessageRequest
 from datetime import datetime, timedelta
 import pytz
 
@@ -368,7 +369,7 @@ def handle_message(event):
 
         for name, task_id, kill_time, respawn_time, respawn_hours in results:
             # hours 應該是 int
-            if not isinstance(hours, (int, float)):
+            if not isinstance(respawn_hours, (int, float)):
                 print("❌ hours 傳錯型別！內容：", hours, type(hours))
                 continue  # 跳過，避免崩潰
 
