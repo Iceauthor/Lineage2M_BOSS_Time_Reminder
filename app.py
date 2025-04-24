@@ -194,14 +194,14 @@ def handle_message(event):
                         (boss_id, group_id, kill_time, respawn_time)
                     )
                     conn.commit()
-                    reply_text = f"\n\n🔴 擊殺：{display_name}\n🕓 死亡：{kill_time.strftime('%Y-%m-%d %H:%M:%S')}\n🟢 重生：{respawn_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                    msg = f"\n\n🔴 擊殺：{display_name}\n🕓 死亡：{kill_time.strftime('%Y-%m-%d %H:%M:%S')}\n🟢 重生：{respawn_time.strftime('%Y-%m-%d %H:%M:%S')}"
                 else:
-                    reply_text = "❌ 找不到該 BOSS 關鍵字。"
+                    msg = "❌ 找不到該 BOSS 關鍵字。"
                 cursor.close()
                 conn.close()
             except:
-                reply_text = "❌ 時間格式錯誤，請使用 K 克4 170124 的格式。"
-            reply_text(event, reply_text)
+                msg = "❌ 時間格式錯誤，請使用 K 克4 170124 的格式。"
+            reply_text(event, msg)
             return
 
     # 處理 clear all 指令：清除該群組所有 BOSS 紀錄
@@ -248,16 +248,16 @@ def handle_message(event):
                         (boss_id, group_id, kill_time, respawn_time)
                     )
                     conn.commit()
-                    reply_text = f"\n\n🔴 擊殺：{display_name}\n🕓 死亡：{kill_time.strftime('%Y-%m-%d %H:%M:%S')}\n🟢 重生：{respawn_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                    msg = f"\n\n🔴 擊殺：{display_name}\n🕓 死亡：{kill_time.strftime('%Y-%m-%d %H:%M:%S')}\n🟢 重生：{respawn_time.strftime('%Y-%m-%d %H:%M:%S')}"
                 else:
-                    reply_text = "❌ 找不到該 BOSS 關鍵字。"
+                    msg = "❌ 找不到該 BOSS 關鍵字。"
                 cursor.close()
                 conn.close()
             except:
-                reply_text = "❌ 時間格式錯誤，請使用 kr1 克4 170124 的格式。"
+                msg = "❌ 時間格式錯誤，請使用 kr1 克4 170124 的格式。"
         else:
-            reply_text = "❌ 指令格式錯誤，請使用 kr1 克4 170124 的格式。"
-        reply_text(event, reply_text)
+            msg = "❌ 指令格式錯誤，請使用 kr1 克4 170124 的格式。"
+        reply_text(event, msg)
         return
     # 處理 K、k 指令作為擊殺紀錄
     if text.lower().startswith("k "):
@@ -286,12 +286,12 @@ def handle_message(event):
             )
             conn.commit()
 
-            reply_text = f"\n\n🔴 擊殺：{display_name}\n🕓 死亡：{now.strftime('%Y-%m-%d %H:%M:%S')}\n🟢 重生：{respawn_time.strftime('%Y-%m-%d %H:%M:%S')}"
+            msg = f"\n\n🔴 擊殺：{display_name}\n🕓 死亡：{now.strftime('%Y-%m-%d %H:%M:%S')}\n🟢 重生：{respawn_time.strftime('%Y-%m-%d %H:%M:%S')}"
         else:
-            reply_text = "❌ 無法辨識的關鍵字，請先使用 add 指令新增。"
+            msg = "❌ 無法辨識的關鍵字，請先使用 add 指令新增。"
         cursor.close()
         conn.close()
-        reply_text(event, reply_text)
+        reply_text(event, msg)
         return
 
     text = event.message.text.strip().lower()
@@ -346,13 +346,13 @@ def handle_message(event):
         def next_respawn_time(r):
             if r[2]:  # r[2] 是 kill_time
                 try:
-                    hours = r[4]
-                    if not isinstance(hours, (int, float)):
-                        print(f"❌ 錯誤：hours 型別錯誤：{type(hours)}，值：{hours}")
+                    respawn_hours  = r[4]
+                    if not isinstance(respawn_hours , (int, float)):
+                        print(f"❌ 錯誤：hours 型別錯誤：{type(respawn_hours )}，值：{respawn_hours }")
                         return float('inf')
-                    respawn_time = r[2].astimezone(tz) + timedelta(hours=hours)
+                    respawn_time = r[2].astimezone(tz) + timedelta(hours=respawn_hours)
                     while respawn_time < now:
-                        respawn_time += timedelta(hours=hours)
+                        respawn_time += timedelta(hours=respawn_hours)
                     delta = (respawn_time - now).total_seconds()
                     return delta
                 except Exception as e:
@@ -410,7 +410,7 @@ def handle_message(event):
                     diff = (now - respawn_time).total_seconds()
                     passed = int(diff // (respawn_hours * 3600))
                     if passed >= 1:
-                        respawn_time += timedelta(hours=passed * hours)
+                        respawn_time += timedelta(hours=passed * respawn_hours)
                         # ✅ 即時更新資料庫
                         update_conn = get_db_connection()
                         update_cursor = update_conn.cursor()
@@ -538,19 +538,14 @@ def handle_message(event):
             else:
                 lines.append(f"__:__:__ {name}\n")
 
-        reply_text = ''.join(lines)
-        line_bot_api.reply_message(
-            event.reply_token,
-            messages=[
-                FlexSendMessage(alt_text="BOSS 重生預測表", contents=bubble)
-            ]
-        )
+        respawn_summary = ''.join(lines)
+        reply_text(event, "🕓 即將重生 BOSS", contents=bubble)
+
     # ✅ ALIAS 指令管理區段
     if text.startswith("alias ") or text.startswith("add "):
         parts = text.split()
         if len(parts) < 2:
-            line_bot_api.reply_message(event.reply_token,
-                                       TextSendMessage(text="⚠️ 格式錯誤，請使用：alias 別名 正式名稱"))
+            reply_text(event, "⚠️ 格式錯誤，請使用：alias 別名 正式名稱")
             return
 
         subcommand = parts[1].lower()
@@ -591,7 +586,6 @@ def handle_message(event):
         if subcommand == "list":
             group_id = event.source.group_id if event.source.type == "group" else "single"
             if group_id == "single":
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 此功能僅限群組使用"))
                 reply_text(event, "⚠️ 此功能僅限群組使用")
                 return
 
@@ -639,7 +633,6 @@ def handle_message(event):
                     ]
                 }
             }
-
             reply_text(event, "本群別名清單", contents=bubble)
             return
 
@@ -658,12 +651,12 @@ def handle_message(event):
                     (boss_id, keyword)
                 )
                 conn.commit()
-                reply_text = f"✅ 已將「{keyword}」設定為「{target_name}」的別名！"
+                msg = f"✅ 已將「{keyword}」設定為「{target_name}」的別名！"
             else:
-                reply_text = f"❌ 找不到名稱為「{target_name}」的 BOSS。"
+                msg = f"❌ 找不到名稱為「{target_name}」的 BOSS。"
             cursor.close()
             conn.close()
-            reply_text(event, reply_text)
+            reply_text(event, msg)
             return
 
     messaging_api.push_message(
