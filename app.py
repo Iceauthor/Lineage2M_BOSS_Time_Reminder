@@ -764,7 +764,7 @@ def reminder_job():
                 respawn_time = tz.localize(respawn_time)
 
             # 計算實際下一次應重生的時間（若已過期則加上週期直到未來）
-            nnext_respawn = respawn_time
+            next_respawn = respawn_time
 
             passed = 0
             while next_respawn < now:
