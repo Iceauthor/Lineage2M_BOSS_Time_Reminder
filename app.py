@@ -370,7 +370,7 @@ def handle_message(event):
         for name, task_id, kill_time, respawn_time, respawn_hours in results:
             # hours 應該是 int
             if not isinstance(respawn_hours, (int, float)):
-                print("❌ hours 傳錯型別！內容：", hours, type(hours))
+                print("❌ hours 傳錯型別！內容：", respawn_hours, type(respawn_hours))
                 continue  # 跳過，避免崩潰
 
             box = {
@@ -676,15 +676,18 @@ def get_group_id(event):
         return event.source.user_id
 
 def reply_text(event, text, contents=None):
-    message = V3TextMessage(text=text)
     if contents:
-        message.contents = contents
+        message = V3FlexMessage(alt_text=text, contents=contents)
+    else:
+        message = V3TextMessage(text=text)
+
     messaging_api.reply_message(
         ReplyMessageRequest(
             reply_token=event.reply_token,
             messages=[message]
         )
     )
+
 
 
 def send_text(group_id, msg):
