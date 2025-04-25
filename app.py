@@ -162,6 +162,9 @@ def handle_message(event):
     text = event.message.text.strip()
     # group_id = event.source.group_id if event.source.type == "group" else "single"
     group_id = get_group_id(event)
+    if not group_id or not group_id.startswith("天堂"):
+        reply_text(event, "⚠️ 此功能僅限群組使用")
+        return
 
     # 處理 K 克4 170124（當日指定時間）
     if text.lower().startswith("k "):
@@ -673,7 +676,8 @@ def get_group_id(event):
     elif hasattr(event.source, "room_id"):
         return event.source.room_id
     else:
-        return event.source.user_id
+        return None  # ⚠️ 避免回傳字串 'single'
+
 
 def reply_text(event, text, contents=None):
     if contents:
@@ -729,7 +733,7 @@ def reminder_job():
         results = cursor.fetchall()
 
         for name, group_id, kill_time, respawn_time, respawn_hours in results:
-            if not group_id or not group_id.startswith("C"):
+            if not group_id or not group_id.startswith("天堂"):
                 continue
 
             if respawn_time is None:
