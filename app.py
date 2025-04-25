@@ -162,7 +162,7 @@ def handle_message(event):
     text = event.message.text.strip()
     # group_id = event.source.group_id if event.source.type == "group" else "single"
     group_id = get_group_id(event)
-    if not group_id or not group_id.startswith("天堂"):
+    if not group_id or not group_id.startswith("C"):
         reply_text(event, "⚠️ 此功能僅限群組使用")
         return
 
@@ -589,7 +589,7 @@ def handle_message(event):
         # ✅ alias list（只顯示本群使用過的 BOSS）
         if subcommand == "list":
             group_id = get_group_id(event)
-            if not group_id or not group_id.startswith("天堂"):  # 判斷是否為合法群組
+            if not group_id or not group_id.startswith("C"):  # 判斷是否為合法群組
                 reply_text(event, "⚠️ 此功能僅限群組使用")
                 return
 
@@ -733,7 +733,7 @@ def reminder_job():
         results = cursor.fetchall()
 
         for name, group_id, kill_time, respawn_time, respawn_hours in results:
-            if not group_id or not group_id.startswith("天堂"):
+            if not group_id or not group_id.startswith("C"):
                 continue
 
             if respawn_time is None:
