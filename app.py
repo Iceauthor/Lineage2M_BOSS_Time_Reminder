@@ -588,8 +588,8 @@ def handle_message(event):
 
         # ✅ alias list（只顯示本群使用過的 BOSS）
         if subcommand == "list":
-            group_id = event.source.group_id if event.source.type == "group" else "single"
-            if group_id == "single":
+            group_id = get_group_id(event)
+            if not group_id or not group_id.startswith("天堂"):  # 判斷是否為合法群組
                 reply_text(event, "⚠️ 此功能僅限群組使用")
                 return
 
